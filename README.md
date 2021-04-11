@@ -35,7 +35,7 @@ let g:lsp_diagnostics_highlights_enabled = 0
 let g:lsp_diagnostics_signs_enabled = 0
 let g:lsp_diagnostics_virtual_text_enabled = 0
 if executable('gopls')
-    call lsp#register_server({
+    autocmd User lsp_setup call lsp#register_server({
         \ 'name': 'gopls',
         \ 'cmd': ['gopls'],
         \ 'allowlist': ['go', 'gomod'],
