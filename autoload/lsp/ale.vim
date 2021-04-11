@@ -18,7 +18,11 @@ function! lsp#ale#notify_diag_results(bufnr) abort
 endfunction
 
 function! s:on_diagnostics(req) abort
-    call lsp#ale#notify_diag_results(bufnr(''))
+    " Use timer_start to ensure calling lsp#ale#notify_diag_results after all
+    " subscribers handled the publishDiagnostics event.
+    " lsp_setup is hooked before vim-lsp sets various internal hooks. So this
+    " function is called before the response is not handled by vim-lsp yet.
+    call timer_start(0, {-> lsp#ale#notify_diag_results(bufnr('')) })
 endfunction
 
 function! s:is_diagnostics_response(item) abort
