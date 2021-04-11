@@ -1,4 +1,25 @@
+" DiagnosticSeverity
+let s:ERROR = 1
+let s:WARN = 2
+let s:INFO = 3
+let s:HINT = 4
+
 let s:Dispose = v:null
+
+function! s:severity_threshold() abort
+    let t = g:lsp_ale_severity_threshold
+    if t ==? 'error'
+        return s:ERROR
+    elseif t ==? 'warning' || t ==? 'warn'
+        return s:WARN
+    elseif t ==? 'information' || t ==? 'info'
+        return s:INFO
+    elseif t ==? 'hint'
+        return s:HINT
+    else
+        throw 'vim-lsp-ale: Unexpected severity "' . t . '". Severity must be one of "error", "warning", "information", "hint"'
+    endif
+endfunction
 
 function! lsp#ale#notify_diag_results(bufnr) abort
     if !lsp#internal#diagnostics#state#_is_enabled_for_buffer(a:bufnr)
@@ -7,14 +28,21 @@ function! lsp#ale#notify_diag_results(bufnr) abort
     call ale#other_source#StartChecking(a:bufnr, 'vim-lsp')
     let uri = lsp#utils#get_buffer_uri(a:bufnr)
     let diags = items(lsp#internal#diagnostics#state#_get_all_diagnostics_grouped_by_server_for_uri(uri))
-    let locs = []
+    let threshold = s:severity_threshold()
+    let results = []
     for [server, diag] in diags
-        for loc in lsp#ui#vim#utils#diagnostics_to_loc_list({'response': diag})
+        let locs = lsp#ui#vim#utils#diagnostics_to_loc_list({'response': diag})
+        let idx = 0
+        for loc in locs
+            if diag.params.diagnostics[idx].severity > threshold
+                continue
+            endif
             let loc.text = '[' . server . '] ' . loc.text
-            let locs += [loc]
+            let results += [loc]
+            let idx += 1
         endfor
     endfor
-    call ale#other_source#ShowResults(a:bufnr, 'vim-lsp', locs)
+    call ale#other_source#ShowResults(a:bufnr, 'vim-lsp', results)
 endfunction
 
 function! s:on_diagnostics(req) abort
