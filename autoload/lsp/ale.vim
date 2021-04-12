@@ -21,6 +21,20 @@ function! s:severity_threshold() abort
     endif
 endfunction
 
+function! s:get_loc_type(severity) abort
+    if a:severity == s:ERROR
+        return 'E'
+    elseif a:severity == s:WARN
+        return 'W'
+    elseif a:severity == s:INFO
+        return 'I'
+    elseif a:severity == s:HINT
+        return 'H'
+    else
+        throw 'vim-lsp-ale: Unexpected severity: ' . a:severity
+    endif
+endfunction
+
 function! lsp#ale#notify_diag_results(bufnr) abort
     if !lsp#internal#diagnostics#state#_is_enabled_for_buffer(a:bufnr)
         return
@@ -34,10 +48,12 @@ function! lsp#ale#notify_diag_results(bufnr) abort
         let locs = lsp#ui#vim#utils#diagnostics_to_loc_list({'response': diag})
         let idx = 0
         for loc in locs
-            if diag.params.diagnostics[idx].severity > threshold
+            let severity = diag.params.diagnostics[idx].severity
+            if severity > threshold
                 continue
             endif
             let loc.text = '[' . server . '] ' . loc.text
+            let loc.type = s:get_loc_type(severity)
             let results += [loc]
             let idx += 1
         endfor
