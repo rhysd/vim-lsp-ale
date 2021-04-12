@@ -48,7 +48,7 @@ function! lsp#ale#notify_diag_results(bufnr) abort
         let locs = lsp#ui#vim#utils#diagnostics_to_loc_list({'response': diag})
         let idx = 0
         for loc in locs
-            let severity = diag.params.diagnostics[idx].severity
+            let severity = get(diag.params.diagnostics[idx], 'severity', s:ERROR)
             if severity > threshold
                 continue
             endif
