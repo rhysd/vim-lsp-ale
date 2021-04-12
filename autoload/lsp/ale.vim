@@ -36,7 +36,7 @@ function! s:get_loc_type(severity) abort
 endfunction
 
 function! lsp#ale#notify_diag_results(bufnr) abort
-    if !lsp#internal#diagnostics#state#_is_enabled_for_buffer(a:bufnr)
+    if s:Dispose is v:null || !lsp#internal#diagnostics#state#_is_enabled_for_buffer(a:bufnr)
         return
     endif
     call ale#other_source#StartChecking(a:bufnr, 'vim-lsp')
