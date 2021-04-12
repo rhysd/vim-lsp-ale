@@ -21,19 +21,12 @@ Plug 'rhysd/vim-lsp-ale'
 
 ## Usage
 
-- Disable showing diagnostics results from vim-lsp since ALE will show the results
-- Disable LSP support of ALE since vim-lsp handles all LSP requests/responses
-- Set `vim-lsp` linter for filetypes you want to check with vim-lsp in `g:ale_linters`
+Register LSP servers you want to use with `lsp#register_server` and set `vim-lsp` linter to `g:ale_linters`
+for filetypes you want to check with vim-lsp.
 
-The following configuration is an example of using `gopls` for linting Go sources though vim-lsp.
+The following example configures `gopls` to check Go sources.
 
 ```vim
-let g:lsp_diagnostics_enabled = 1
-let g:lsp_diagnostics_echo_cursor = 0
-let g:lsp_diagnostics_float_cursor = 0
-let g:lsp_diagnostics_highlights_enabled = 0
-let g:lsp_diagnostics_signs_enabled = 0
-let g:lsp_diagnostics_virtual_text_enabled = 0
 if executable('gopls')
     autocmd User lsp_setup call lsp#register_server({
         \ 'name': 'gopls',
@@ -41,11 +34,17 @@ if executable('gopls')
         \ 'allowlist': ['go', 'gomod'],
         \ })
 endif
-let g:ale_disable_lsp = 0
 let g:ale_linters = {
     \   'go': ['vim-lsp'],
     \ }
 ```
+
+This plugin configures vim-lsp and ALE automatically unless `g:lsp_ale_setup_variables` is not set.
+
+- Disable showing diagnostics results from vim-lsp since ALE will show the results
+- Disable LSP support of ALE since vim-lsp handles all LSP requests/responses
+
+You don't need to set several variables in your `.vimrc`.
 
 ## License
 
