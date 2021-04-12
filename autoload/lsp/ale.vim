@@ -35,11 +35,21 @@ function! s:get_loc_type(severity) abort
     endif
 endfunction
 
-function! lsp#ale#notify_diag_results(bufnr) abort
-    if s:Dispose is v:null || !lsp#internal#diagnostics#state#_is_enabled_for_buffer(a:bufnr)
+function! lsp#ale#on_ale_want_results(bufnr) abort
+    if s:Dispose is v:null
         return
     endif
     call ale#other_source#StartChecking(a:bufnr, 'vim-lsp')
+    " Avoid the issue that sign and highlight are not set
+    " https://github.com/dense-analysis/ale/issues/3690
+    call timer_start(0, {-> s:notify_diag_to_ale(a:bufnr) })
+endfunction
+
+function! s:notify_diag_to_ale(bufnr) abort
+    if !lsp#internal#diagnostics#state#_is_enabled_for_buffer(a:bufnr)
+        call ale#other_source#ShowResults(a:bufnr, 'vim-lsp', [])
+        return
+    endif
     let uri = lsp#utils#get_buffer_uri(a:bufnr)
     let diags = items(lsp#internal#diagnostics#state#_get_all_diagnostics_grouped_by_server_for_uri(uri))
     let threshold = s:severity_threshold()
@@ -62,11 +72,13 @@ function! lsp#ale#notify_diag_results(bufnr) abort
 endfunction
 
 function! s:on_diagnostics(req) abort
-    " Use timer_start to ensure calling lsp#ale#notify_diag_results after all
+    let bufnr = bufnr('')
+    call ale#other_source#StartChecking(bufnr, 'vim-lsp')
+    " Use timer_start to ensure calling s:notify_diag_to_ale after all
     " subscribers handled the publishDiagnostics event.
     " lsp_setup is hooked before vim-lsp sets various internal hooks. So this
     " function is called before the response is not handled by vim-lsp yet.
-    call timer_start(0, {-> lsp#ale#notify_diag_results(bufnr('')) })
+    call timer_start(0, {-> s:notify_diag_to_ale(bufnr) })
 endfunction
 
 function! s:is_diagnostics_response(item) abort

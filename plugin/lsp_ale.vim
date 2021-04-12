@@ -21,5 +21,5 @@ endif
 augroup plugin-lsp-ale
     autocmd!
     autocmd User lsp_setup call lsp#ale#enable()
-    autocmd User ALEWantResults call lsp#ale#notify_diag_results(g:ale_want_results_buffer)
+    autocmd User ALEWantResults call lsp#ale#on_ale_want_results(g:ale_want_results_buffer)
 augroup END
