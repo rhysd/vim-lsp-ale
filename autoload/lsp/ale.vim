@@ -72,6 +72,8 @@ function! s:notify_diag_to_ale(bufnr) abort
 endfunction
 
 function! s:on_diagnostics(req) abort
+    " TODO: the response is not always for current buffer. Get bufnr for the
+    " response by file URI in a:res
     let bufnr = bufnr('')
     call ale#other_source#StartChecking(bufnr, 'vim-lsp')
     " Use timer_start to ensure calling s:notify_diag_to_ale after all
