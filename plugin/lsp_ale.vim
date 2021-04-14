@@ -3,7 +3,7 @@ if (exists('g:loaded_lsp_ale') && g:loaded_lsp_ale) || &cp
 endif
 let g:loaded_lsp_ale = 1
 
-let g:lsp_ale_severity_threshold = get(g:, 'lsp_ale_severity_threshold', 'information')
+let g:lsp_ale_diagnostics_severity = get(g:, 'lsp_ale_diagnostics_severity', 'information')
 
 if get(g:, 'lsp_ale_setup_variables', v:true)
     " Enable diagnostics and disable all functionalities to show error

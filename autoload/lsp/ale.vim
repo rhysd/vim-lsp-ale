@@ -7,17 +7,17 @@ let s:HINT = 4
 let s:Dispose = v:null
 
 function! s:severity_threshold() abort
-    let t = g:lsp_ale_severity_threshold
-    if t ==? 'error'
+    let s = g:lsp_ale_diagnostics_severity
+    if s ==? 'error'
         return s:ERROR
-    elseif t ==? 'warning' || t ==? 'warn'
+    elseif s ==? 'warning' || s ==? 'warn'
         return s:WARN
-    elseif t ==? 'information' || t ==? 'info'
+    elseif s ==? 'information' || s ==? 'info'
         return s:INFO
-    elseif t ==? 'hint'
+    elseif s ==? 'hint'
         return s:HINT
     else
-        throw 'vim-lsp-ale: Unexpected severity "' . t . '". Severity must be one of "error", "warning", "information", "hint"'
+        throw 'vim-lsp-ale: Unexpected severity "' . s . '". Severity must be one of "error", "warning", "information", "hint"'
     endif
 endfunction
 
