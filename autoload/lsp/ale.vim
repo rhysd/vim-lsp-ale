@@ -51,10 +51,10 @@ function! s:notify_diag_to_ale(bufnr) abort
         return
     endif
     let uri = lsp#utils#get_buffer_uri(a:bufnr)
-    let diags = items(lsp#internal#diagnostics#state#_get_all_diagnostics_grouped_by_server_for_uri(uri))
+    let diags = lsp#internal#diagnostics#state#_get_all_diagnostics_grouped_by_server_for_uri(uri)
     let threshold = s:severity_threshold()
     let results = []
-    for [server, diag] in diags
+    for [server, diag] in items(diags)
         let locs = lsp#ui#vim#utils#diagnostics_to_loc_list({'response': diag})
         let idx = 0
         for loc in locs
@@ -71,18 +71,35 @@ function! s:notify_diag_to_ale(bufnr) abort
     call ale#other_source#ShowResults(a:bufnr, 'vim-lsp', results)
 endfunction
 
-function! s:on_diagnostics(res) abort
-    let path = lsp#utils#uri_to_path(a:res.response.params.uri)
+let s:prev_num_diags = {}
+function! s:on_diagnostics(uri, res) abort
+    let uri = a:res.response.params.uri
+    let num_diags = len(a:res.response.params.diagnostics)
+    if num_diags == 0 && has_key(s:prev_num_diags, uri) && s:prev_num_diags[uri] == 0
+        " Some language servers send diagnostics notifications even if the
+        " results are not changed from previous. It's hard to check the
+        " notifications are perfectly the same as previous. Here only checks
+        " emptiness and skip if both previous ones and current ones are
+        " empty.
+        " I believe programmers usually try to keep no lint errors in the
+        " source code they are writing :)
+        return
+    endif
+
+    let path = lsp#utils#uri_to_path(uri)
     let bufnr = bufnr('^' . path . '$')
     if bufnr == -1
         return
     endif
+
     call ale#other_source#StartChecking(bufnr, 'vim-lsp')
     " Use timer_start to ensure calling s:notify_diag_to_ale after all
     " subscribers handled the publishDiagnostics event.
     " lsp_setup is hooked before vim-lsp sets various internal hooks. So this
     " function is called before the response is not handled by vim-lsp yet.
     call timer_start(0, {-> s:notify_diag_to_ale(bufnr) })
+
+    let s:prev_num_diags[uri] = num_diags
 endfunction
 
 function! s:is_diagnostics_response(item) abort
