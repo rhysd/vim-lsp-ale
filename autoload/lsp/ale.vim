@@ -71,10 +71,12 @@ function! s:notify_diag_to_ale(bufnr) abort
     call ale#other_source#ShowResults(a:bufnr, 'vim-lsp', results)
 endfunction
 
-function! s:on_diagnostics(req) abort
-    " TODO: the response is not always for current buffer. Get bufnr for the
-    " response by file URI in a:res
-    let bufnr = bufnr('')
+function! s:on_diagnostics(res) abort
+    let path = lsp#utils#uri_to_path(a:res.response.params.uri)
+    let bufnr = bufnr('^' . path . '$')
+    if bufnr == -1
+        return
+    endif
     call ale#other_source#StartChecking(bufnr, 'vim-lsp')
     " Use timer_start to ensure calling s:notify_diag_to_ale after all
     " subscribers handled the publishDiagnostics event.
