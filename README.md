@@ -39,12 +39,10 @@ let g:ale_linters = {
     \ }
 ```
 
-This plugin configures vim-lsp and ALE automatically unless `g:lsp_ale_setup_variables` is not set.
+This plugin configures vim-lsp and ALE automatically. You don't need to setup various variables.
 
-- Disable showing diagnostics results from vim-lsp since ALE will show the results
-- Disable LSP support of ALE since vim-lsp handles all LSP requests/responses
-
-You don't need to set several variables in your `.vimrc`.
+- Disable showing diagnostics results from vim-lsp since ALE will show the results when `g:lsp_ale_auto_config_vim_lsp` is not set to `v:false`
+- Disable LSP support of ALE since vim-lsp handles all LSP requests/responses when `g:lsp_ale_auto_config_ale` is not set to `v:false`
 
 ## License
 

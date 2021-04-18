@@ -5,7 +5,7 @@ let g:loaded_lsp_ale = 1
 
 let g:lsp_ale_diagnostics_severity = get(g:, 'lsp_ale_diagnostics_severity', 'information')
 
-if get(g:, 'lsp_ale_setup_variables', v:true)
+if get(g:, 'lsp_ale_auto_config_vim_lsp', v:true)
     " Enable diagnostics and disable all functionalities to show error
     " messages by vim-lsp
     let g:lsp_diagnostics_enabled = 1
@@ -14,6 +14,8 @@ if get(g:, 'lsp_ale_setup_variables', v:true)
     let g:lsp_diagnostics_highlights_enabled = 0
     let g:lsp_diagnostics_signs_enabled = 0
     let g:lsp_diagnostics_virtual_text_enabled = 0
+endif
+if get(g:, 'lsp_ale_auto_config_ale', v:true)
     " Disable ALE's LSP integration
     let g:ale_disable_lsp = 0
 endif
