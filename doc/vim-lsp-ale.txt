@@ -30,6 +30,7 @@ vim-lsp's |:LspDocumentDiagnostics| together. But managing linter results
 with multiple plugins is complicated and confusing since behaviors of each
 plugins are not persistent.
 
+Screencast: https://github.com/rhysd/ss/blob/master/vim-lsp-ale/main.gif
 
 ==============================================================================
 INSTALL                                                    *vim-lsp-ale-install*

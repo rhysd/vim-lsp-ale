@@ -7,6 +7,8 @@ When simply using ALE and vim-lsp, both plugins run LSP servers respectively. vi
 diagnostics results from vim-lsp and passes them to ALE. The diagnostics results are shown as part
 of lint results by ALE.
 
+<img alt="screencast" src="https://github.com/rhysd/ss/blob/master/vim-lsp-ale/main.gif?raw=true" width="582" height="316"/>
+
 ## Installation
 
 Install [vim-lsp][], [ale][ALE], [vim-lsp-ale][] with your favorite package manager or `:packadd` in your `.vimrc`.
