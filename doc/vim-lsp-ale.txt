@@ -1,0 +1,164 @@
+*vim-lsp-ale.txt*                   Bridge between vim-slp and ale
+
+Author: rhysd <https://rhysd.github.io>
+
+CONTENTS                            *vim-lsp-ale-contents*
+
+Introduction                        |vim-lsp-ale-introduction|
+Install                             |vim-lsp-ale-install|
+Usage                               |vim-lsp-ale-usage|
+Variables                           |vim-lsp-ale-variables|
+Issues                              |vim-lsp-ale-issues|
+License                             |vim-lsp-ale-license|
+
+
+==============================================================================
+INTRODUCTION                                          *vim-lsp-ale-introduction*
+
+*vim-lsp-ale* is a plugin for bridge between |vim-lsp| and |ale|.
+
+When using ALE and vim-lsp, both plugins run language server process
+respectively. It's resource consuming and may cause some issues due to
+multiple server processes running at the same time.
+
+|vim-lsp-ale| solves the problem by getting diagnostics results from vim-lsp
+and by sending them to ALE. It means vim-lsp can be handled as one of linters
+supported by ALE.
+
+It's also possible to disable LSP features in ALE and use both ALE and
+vim-lsp's |:LspDocumentDiagnostics| together. But managing linter results
+with multiple plugins is complicated and confusing since behaviors of each
+plugins are not persistent.
+
+
+==============================================================================
+INSTALL                                                    *vim-lsp-ale-install*
+
+Install |ale|, |vim-lsp| and |vim-lsp-ale| with your favorite plugin manager
+or using |:packadd|.
+The following is an example using vim-plug.
+
+>
+  Plug 'dense-analysis/ale'
+  Plug 'prabirshrestha/vim-lsp'
+  Plug 'rhysd/vim-lsp-ale'
+<
+Repositories:
+
+- ALE: https://github.com/dense-analysis/ale/
+- vim-lsp: https://github.com/prabirshrestha/vim-lsp
+- vim-lsp-ale: https://github.com/rhysd/vim-lsp-ale
+
+
+==============================================================================
+USAGE                                                        *vim-lsp-ale-usage*
+
+Register LSP servers you want to use with |lsp#register_server()| and set
+"vim-lsp" linter to |g:ale_linters| for filetypes you want to check with
+vim-lsp.
+
+The following example configures gopls to check Go sources. ALE will
+automatically reports diagnostics results from gopls when you're writing Go
+code.
+>
+  if executable('gopls')
+      autocmd User lsp_setup call lsp#register_server({
+          \ 'name': 'gopls',
+          \ 'cmd': ['gopls'],
+          \ 'allowlist': ['go', 'gomod'],
+          \ })
+  endif
+  let g:ale_linters = {
+      \   'go': ['vim-lsp'],
+      \ }
+<
+gopls: https://github.com/golang/tools/tree/master/gopls
+
+vim-lsp-ale configures vim-lsp and ALE automatically. You don't need to setup
+various variables for them.
+
+vim-lsp-ale automatically does:
+
+- disable showing diagnostics results from vim-lsp since ALE will show the
+  results
+- disable LSP support of ALE since vim-lsp handles all LSP requests/responses
+
+If you don't want them to be done automatically, see
+|g:lsp_ale_auto_config_vim_lsp| and |g:lsp_ale_auto_config_ale|
+
+
+==============================================================================
+VARIABLES                                                *vim-lsp-ale-variables*
+
+Behavior of vim-lsp-ale can be cusomized with some global variables.
+
+------------------------------------------------------------------------------
+*g:lsp_ale_auto_config_vim_lsp* (Default: |v:true|)
+
+When |v:true| is set to true, vim-lsp-ale automatically sets several variables
+for configuring vim-lsp not to show diagnostics results in vim-lsp side.
+
+At the time of writing, setting |v:true| is the same as:
+>
+  let g:lsp_diagnostics_enabled = 1
+  let g:lsp_diagnostics_echo_cursor = 0
+  let g:lsp_diagnostics_float_cursor = 0
+  let g:lsp_diagnostics_highlights_enabled = 0
+  let g:lsp_diagnostics_signs_enabled = 0
+  let g:lsp_diagnostics_virtual_text_enabled = 0
+<
+When |v:false| is set, vim-lsp-ale does not set any variables to configure
+vim-lsp so that you can configure them by yourself.
+
+------------------------------------------------------------------------------
+*g:lsp_ale_auto_config_ale* (Default: |v:true|)
+
+When |v:true| is set to true, vim-lsp-ale automatically sets several variables
+for configuring ALE not to start LSP server process.
+
+At the time of writing, setting |v:true| is the same as:
+>
+  let g:ale_disable_lsp = 0
+<
+When |v:false| is set, vim-lsp-ale does not set any variables to configure
+ALE so that you can configure them by yourself.
+
+
+==============================================================================
+ISSUES                                                      *vim-lsp-ale-issues*
+
+When you find some issues or you have some feature requests to vim-lsp-ale,
+visit GitHub repository page and make a new issue:
+
+https://github.com/rhysd/vim-lsp-ale/issues/new
+
+
+==============================================================================
+LICENSE                                                    *vim-lsp-ale-license*
+
+vim-lsp-ale is distributed under the MIT license.
+>
+  The MIT License (MIT)
+
+  Copyright (c) 2021 rhysd
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+  of the Software, and to permit persons to whom the Software is furnished to do so,
+  subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+  INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+  PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+  LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+  TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
+  THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+<
+
+==============================================================================
+vim:tw=78:ts=8:ft=help:norl:et:fen:fdl=0:
