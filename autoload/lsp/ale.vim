@@ -72,7 +72,7 @@ function! s:notify_diag_to_ale(bufnr) abort
 endfunction
 
 let s:prev_num_diags = {}
-function! s:on_diagnostics(uri, res) abort
+function! s:on_diagnostics(res) abort
     let uri = a:res.response.params.uri
     let num_diags = len(a:res.response.params.diagnostics)
     if num_diags == 0 && has_key(s:prev_num_diags, uri) && s:prev_num_diags[uri] == 0
