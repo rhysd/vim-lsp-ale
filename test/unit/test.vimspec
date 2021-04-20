@@ -1,0 +1,12 @@
+Describe vim-lsp-ale
+    It defines plugin-lsp-ale autocmd group
+        Assert True(exists('g:loaded_lsp_ale'))
+
+        redir => autocmds
+            autocmd plugin-lsp-ale
+        redir END
+
+        Assert True(stridx(autocmds, 'lsp_setup') >= 0, autocmds)
+        Assert True(stridx(autocmds, 'ALEWantResults') >= 0, autocmds)
+    End
+End
