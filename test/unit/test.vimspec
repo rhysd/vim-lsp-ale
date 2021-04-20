@@ -1,4 +1,15 @@
 Describe vim-lsp-ale
+    Before each
+        call lsp#callbag#reset()
+        call ale#other_source#reset()
+        let g:lsp_ale_test_expected_bufnr = bufnr('')
+        doautocmd User lsp_setup
+    End
+
+    After each
+        call lsp#ale#disable()
+    End
+
     It defines plugin-lsp-ale autocmd group
         Assert True(exists('g:loaded_lsp_ale'))
 
@@ -8,5 +19,43 @@ Describe vim-lsp-ale
 
         Assert True(stridx(autocmds, 'lsp_setup') >= 0, autocmds)
         Assert True(stridx(autocmds, 'ALEWantResults') >= 0, autocmds)
+    End
+
+    It subscribes notification stream on lsp_setup autocmd event
+        Assert True(lsp#callbag#piped())
+    End
+
+    It stops subscribing stream when lsp#ale#disable() is called
+        Assert False(lsp#callbag#disposed())
+        call lsp#ale#disable()
+        Assert True(lsp#callbag#disposed())
+    End
+
+    It notifies empty list when the buffer disables LSP
+        Assert Equals(ale#other_source#last_start_checking(), v:null)
+        Assert Equals(ale#other_source#last_show_results(), v:null)
+
+        let g:lsp_ale_test_expected_bufnr = -1
+        let bufnr = bufnr('')
+        let g:ale_want_results_buffer = bufnr
+        doautocmd User ALEWantResults
+
+        call ale#other_source#wait_until_show_results()
+
+        Assert Equals(ale#other_source#last_start_checking(), [bufnr, 'vim-lsp'])
+        Assert Equals(ale#other_source#last_show_results(), [bufnr, 'vim-lsp', []])
+    End
+
+    It notifies empty list on no diagnostics error
+        Assert Equals(ale#other_source#last_start_checking(), v:null)
+        Assert Equals(ale#other_source#last_show_results(), v:null)
+
+        let g:lsp_ale_test_received_diags = {}
+
+        let bufnr = bufnr('')
+        let g:ale_want_results_buffer = bufnr
+        doautocmd User ALEWantResults
+
+        call ale#other_source#wait_until_show_results()
     End
 End
