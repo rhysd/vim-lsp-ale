@@ -281,3 +281,5 @@ Describe vim-lsp-ale
         Assert Equals(ale#other_source#last_show_results(), [bufnr, 'vim-lsp', []])
     End
 End
+
+" vim: set ft=vim:
