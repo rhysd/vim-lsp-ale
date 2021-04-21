@@ -47,6 +47,12 @@ function! s:test_locs() abort
         \ ]]
 endfunction
 
+function! s:modify_loc_item(item, type) abort
+    let a:item.type = a:type
+    let a:item.text = '[gopls] ' . a:item.text
+    return a:item
+endfunction
+
 Describe vim-lsp-ale
     Before each
         call lsp#callbag#reset()
@@ -133,11 +139,71 @@ Describe vim-lsp-ale
         Assert Equals(show_name, 'vim-lsp')
 
         let expected_locs = s:test_locs()[0]
-        let expected_locs[0].type = 'E'
-        let expected_locs[0].text = '[gopls] ' . expected_locs[0].text
-        let expected_locs[1].type = 'W'
-        let expected_locs[1].text = '[gopls] ' . expected_locs[1].text
+        call s:modify_loc_item(expected_locs[0], 'E')
+        call s:modify_loc_item(expected_locs[1], 'W')
 
         Assert Equals(loclist, expected_locs)
+    End
+
+    It filters diagnostics results by severity
+        Assert Equals(ale#other_source#last_start_checking(), v:null)
+        Assert Equals(ale#other_source#last_show_results(), v:null)
+
+        call lsp#ui#vim#utils#mock_diagnostics_to_loc_list(s:test_locs())
+        let actual_diags = s:test_diags()
+        " Set 'hint' severity. Default threshold is 'info'
+        let actual_diags.gopls.params.diagnostics[1].severity = 4
+        let g:lsp_ale_test_mock_diags = actual_diags
+
+        let bufnr = bufnr('')
+        doautocmd User ALEWantResults
+
+        call ale#other_source#wait_until_show_results()
+
+        Assert Equals(ale#other_source#last_start_checking(), [bufnr, 'vim-lsp'])
+
+        let [show_bufnr, show_name, loclist] = ale#other_source#last_show_results()
+        Assert Equals(show_bufnr, bufnr)
+        Assert Equals(show_name, 'vim-lsp')
+
+        Assert Equals(len(loclist), 1, string(loclist))
+    End
+
+    Describe g:lsp_ale_diagnostics_severity
+        Before
+            let saved_diagnostics_severity = g:lsp_ale_diagnostics_severity
+        End
+
+        After
+            let g:lsp_ale_diagnostics_severity = saved_diagnostics_severity
+        End
+
+        It specifies threshold to filter diagnostics results by severity
+            Assert Equals(ale#other_source#last_start_checking(), v:null)
+            Assert Equals(ale#other_source#last_show_results(), v:null)
+
+            let g:lsp_ale_diagnostics_severity = 'error'
+
+            call lsp#ui#vim#utils#mock_diagnostics_to_loc_list(s:test_locs())
+            let actual_diags = s:test_diags()
+            " Set 'warning' severity.
+            let actual_diags.gopls.params.diagnostics[1].severity = 2
+            let g:lsp_ale_test_mock_diags = actual_diags
+
+            let bufnr = bufnr('')
+            doautocmd User ALEWantResults
+
+            call ale#other_source#wait_until_show_results()
+
+            Assert Equals(ale#other_source#last_start_checking(), [bufnr, 'vim-lsp'])
+
+            let [show_bufnr, show_name, loclist] = ale#other_source#last_show_results()
+            Assert Equals(show_bufnr, bufnr)
+            Assert Equals(show_name, 'vim-lsp')
+
+            " Only one error item remains
+            let expected = [s:modify_loc_item(s:test_locs()[0][0], 'E')]
+            Assert Equals(loclist, expected)
+        End
     End
 End
