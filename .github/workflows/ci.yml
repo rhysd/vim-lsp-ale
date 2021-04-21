@@ -13,7 +13,11 @@ jobs:
 
   test:
     name: Unit tests
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+        neovim: [true, false]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
       - name: Checkout themis.vim
@@ -23,6 +27,8 @@ jobs:
           path: vim-themis
       - uses: rhysd/action-setup-vim@v1
         id: vim
+        with:
+          neovim: ${{ matrix.neovim }}
       - name: Run unit tests
         env:
           THEMIS_VIM: ${{ steps.vim.outputs.executable }}
