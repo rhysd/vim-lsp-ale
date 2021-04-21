@@ -124,6 +124,15 @@ At the time of writing, setting |v:true| is the same as:
 When |v:false| is set, vim-lsp-ale does not set any variables to configure
 ALE so that you can configure them by yourself.
 
+------------------------------------------------------------------------------
+*g:lsp_ale_diagnostics_severity* (Default: "information")
+
+Severity level of reported diagnostics results. Possible values are "error",
+"warning", "information", "hint". Diagnostics results will be filstered by the
+severity set to this variable.
+For example, when "warning" is set, "error"/"warning" results are shown
+and "information"/"hint" results are not shown.
+
 
 ==============================================================================
 ISSUES                                                      *vim-lsp-ale-issues*
