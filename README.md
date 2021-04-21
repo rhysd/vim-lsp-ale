@@ -1,5 +1,6 @@
 [vim-lsp][] + [ALE][]
 =====================
+[![Build Status][ci-badge]][ci]
 
 [vim-lsp-ale][] is a Vim plugin for bridge between [vim-lsp][] and [ALE][]. Diagnostics results received
 by vim-lsp are shown in ALE's interface.
@@ -56,3 +57,5 @@ Licensed under [the MIT license](./LICENSE).
 [vim-lsp]: https://github.com/prabirshrestha/vim-lsp
 [ALE]: https://github.com/dense-analysis/ale
 [vim-lsp-ale]: https://github.com/rhysd/vim-lsp-ale
+[ci-badge]: https://github.com/rhysd/vim-lsp-ale/workflows/CI/badge.svg?branch=master&event=push
+[ci]: https://github.com/rhysd/vim-lsp-ale/actions?query=workflow%3ACI+branch%3Amaster
