@@ -33,12 +33,25 @@ function! ale#other_source#wait_until_show_results() abort
     let timeout = 1
     let total = 0
     while s:show_results_called is v:null
-        sleep 100m
         let total += 0.1
-        if total >= timeout
+        if total > timeout
             throw 'ale#other_source#ShowResults() was not called while 1 second'
         endif
+        sleep 100m
     endwhile
+endfunction
+
+function! ale#other_source#check_show_no_result() abort
+    let timeout = 1
+    let total = 0
+    while s:show_results_called is v:null
+        let total += 0.1
+        if total > timeout
+            return
+        endif
+        sleep 100m
+    endwhile
+    throw 'ale#other_source#ShowResults() was called within 1 second: ' . string(s:show_results_called)
 endfunction
 
 function! ale#other_source#reset() abort

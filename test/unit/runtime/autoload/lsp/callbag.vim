@@ -28,7 +28,7 @@ function! lsp#callbag#reset() abort
     let s:disposed = v:false
 endfunction
 
-function! lsp#callbag#receive(res) abort
+function! lsp#callbag#mock_receive(res) abort
     if s:Filter(a:res)
         call s:Next(a:res)
     endif
