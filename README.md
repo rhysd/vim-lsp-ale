@@ -1,11 +1,12 @@
 [vim-lsp][] + [ALE][]
 =====================
 
-[vim-lsp-ale][] is a Vim plugin for bridge between [vim-lsp][] and [ALE][].
+[vim-lsp-ale][] is a Vim plugin for bridge between [vim-lsp][] and [ALE][]. Diagnostics results received
+by vim-lsp are shown in ALE's interface.
 
-When simply using ALE and vim-lsp, both plugins run LSP servers respectively. vim-lsp-ale takes
-diagnostics results from vim-lsp and passes them to ALE. The diagnostics results are shown as part
-of lint results by ALE.
+When simply using ALE and vim-lsp, both plugins run LSP servers respectively. Running multiple server processes
+consume resources and may cause some issues. Showing lint results from multiple plugins is confusing.
+vim-lsp-ale solves the problem.
 
 <img alt="screencast" src="https://github.com/rhysd/ss/blob/master/vim-lsp-ale/main.gif?raw=true" width="582" height="316"/>
 
@@ -42,6 +43,9 @@ let g:ale_linters = {
 ```
 
 This plugin configures vim-lsp and ALE automatically. You don't need to setup various variables.
+
+When opening a source code including some lint errors, vim-lsp will receive the errors from language server
+and ALE will report the errors in the buffer.
 
 For more details, see [the documentation](./doc/vim-lsp-ale.txt).
 
