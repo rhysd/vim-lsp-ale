@@ -36,7 +36,9 @@ function! s:get_loc_type(severity) abort
 endfunction
 
 function! lsp#ale#on_ale_want_results(bufnr) abort
-    if s:Dispose is v:null
+    " Note: Checking lsp#internal#diagnostics#state#_is_enabled_for_buffer here. If previous lint
+    " errors remain in a buffer, they won't be updated when vim-lsp is disabled for the buffer.
+    if s:Dispose is v:null || !lsp#internal#diagnostics#state#_is_enabled_for_buffer(a:bufnr)
         return
     endif
     call ale#other_source#StartChecking(a:bufnr, 'vim-lsp')
@@ -46,15 +48,12 @@ function! lsp#ale#on_ale_want_results(bufnr) abort
 endfunction
 
 function! s:notify_diag_to_ale(bufnr) abort
-    if !lsp#internal#diagnostics#state#_is_enabled_for_buffer(a:bufnr)
-        call ale#other_source#ShowResults(a:bufnr, 'vim-lsp', [])
-        return
-    endif
     let uri = lsp#utils#get_buffer_uri(a:bufnr)
     let diags = lsp#internal#diagnostics#state#_get_all_diagnostics_grouped_by_server_for_uri(uri)
     let threshold = s:severity_threshold()
     let results = []
     for [server, diag] in items(diags)
+        " TODO: Filter `diag` by severity before passing it to lsp#ui#vim#utils#diagnostics_to_loc_list
         let locs = lsp#ui#vim#utils#diagnostics_to_loc_list({'response': diag})
         let idx = 0
         for loc in locs
@@ -131,4 +130,8 @@ function! lsp#ale#disable() abort
     endif
     call s:Dispose()
     let s:Dispose = v:null
+endfunction
+
+function! lsp#ale#enabled() abort
+    return s:Dispose isnot v:null
 endfunction

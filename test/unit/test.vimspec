@@ -1,9 +1,61 @@
+function! s:test_diags() abort
+    return {
+        \ 'gopls': {
+        \   'method': 'textDocument/publishDiagnostics',
+        \   'jsonrpc': '2.0',
+        \   'params': {
+        \       'uri': 'file:///Users/rhysd/.vim/bundle/vim-lsp-ale/foo.go',
+        \       'diagnostics': [
+        \           {
+        \               'source': 'compiler',
+        \               'range': {
+        \                   'end': {'character': 4, 'line': 4},
+        \                   'start': {'character': 1, 'line': 4}
+        \               },
+        \               'message': 'error message 1',
+        \               'severity': 1
+        \           },
+        \           {
+        \               'source': 'compiler',
+        \               'range': {
+        \                   'end': {'character': 4, 'line': 4},
+        \                   'start': {'character': 1, 'line': 4}
+        \               },
+        \               'message': 'warning message 1',
+        \               'severity': 2
+        \           }
+        \       ]
+        \   }
+        \ }
+        \}
+endfunction
+
+function! s:test_locs() abort
+    return [[
+        \   {
+        \       'lnum': 5,
+        \       'col': 2,
+        \       'filename': '/Users/rhysd/.vim/bundle/vim-lsp-ale/foo.go',
+        \       'text': 'compiler:Error:error message 1'
+        \   },
+        \   {
+        \       'lnum': 5,
+        \       'col': 2,
+        \       'filename': '/Users/rhysd/.vim/bundle/vim-lsp-ale/foo.go',
+        \       'text': 'compiler:Warning:warning message 1'
+        \   }
+        \ ]]
+endfunction
+
 Describe vim-lsp-ale
     Before each
         call lsp#callbag#reset()
         call ale#other_source#reset()
-        let g:lsp_ale_test_expected_bufnr = bufnr('')
+        call lsp#ui#vim#utils#reset()
+        let g:lsp_ale_test_mock_diags = {}
+        let g:lsp_ale_test_mock_bufnr = bufnr('')
         doautocmd User lsp_setup
+        let g:ale_want_results_buffer = bufnr('')
     End
 
     After each
@@ -26,18 +78,34 @@ Describe vim-lsp-ale
     End
 
     It stops subscribing stream when lsp#ale#disable() is called
-        Assert False(lsp#callbag#disposed())
+        Assert True(lsp#ale#enabled())
         call lsp#ale#disable()
+        Assert False(lsp#ale#enabled())
         Assert True(lsp#callbag#disposed())
     End
 
-    It notifies empty list when the buffer disables LSP
+    It does not notify results when vim-lsp-ale is disabled
+        call lsp#ale#disable()
+        doautocmd User ALEWantResults
+        Assert Equals(ale#other_source#last_start_checking(), v:null)
+    End
+
+    It does not notify results when the buffer disables LSP
+        Assert Equals(ale#other_source#last_start_checking(), v:null)
+
+        let g:lsp_ale_test_mock_bufnr = -1
+        doautocmd User ALEWantResults
+
+        Assert Equals(ale#other_source#last_start_checking(), v:null)
+    End
+
+    It notifies empty list on no diagnostics error
         Assert Equals(ale#other_source#last_start_checking(), v:null)
         Assert Equals(ale#other_source#last_show_results(), v:null)
 
-        let g:lsp_ale_test_expected_bufnr = -1
+        let g:lsp_ale_test_mock_diags = {}
+
         let bufnr = bufnr('')
-        let g:ale_want_results_buffer = bufnr
         doautocmd User ALEWantResults
 
         call ale#other_source#wait_until_show_results()
@@ -46,16 +114,30 @@ Describe vim-lsp-ale
         Assert Equals(ale#other_source#last_show_results(), [bufnr, 'vim-lsp', []])
     End
 
-    It notifies empty list on no diagnostics error
+    It notifies location list items converted from diagnostics results
         Assert Equals(ale#other_source#last_start_checking(), v:null)
         Assert Equals(ale#other_source#last_show_results(), v:null)
 
-        let g:lsp_ale_test_received_diags = {}
+        call lsp#ui#vim#utils#mock_diagnostics_to_loc_list(s:test_locs())
+        let g:lsp_ale_test_mock_diags = s:test_diags()
 
         let bufnr = bufnr('')
-        let g:ale_want_results_buffer = bufnr
         doautocmd User ALEWantResults
 
         call ale#other_source#wait_until_show_results()
+
+        Assert Equals(ale#other_source#last_start_checking(), [bufnr, 'vim-lsp'])
+
+        let [show_bufnr, show_name, loclist] = ale#other_source#last_show_results()
+        Assert Equals(show_bufnr, bufnr)
+        Assert Equals(show_name, 'vim-lsp')
+
+        let expected_locs = s:test_locs()[0]
+        let expected_locs[0].type = 'E'
+        let expected_locs[0].text = '[gopls] ' . expected_locs[0].text
+        let expected_locs[1].type = 'W'
+        let expected_locs[1].text = '[gopls] ' . expected_locs[1].text
+
+        Assert Equals(loclist, expected_locs)
     End
 End
