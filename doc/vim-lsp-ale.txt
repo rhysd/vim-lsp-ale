@@ -8,6 +8,7 @@ Introduction                        |vim-lsp-ale-introduction|
 Install                             |vim-lsp-ale-install|
 Usage                               |vim-lsp-ale-usage|
 Variables                           |vim-lsp-ale-variables|
+Functions                           |vim-lsp-ale-functions|
 Issues                              |vim-lsp-ale-issues|
 License                             |vim-lsp-ale-license|
 
@@ -91,7 +92,7 @@ If you don't want them to be done automatically, see
 ==============================================================================
 VARIABLES                                                *vim-lsp-ale-variables*
 
-Behavior of vim-lsp-ale can be cusomized with some global variables.
+Behavior of vim-lsp-ale can be customized with some global variables.
 
 ------------------------------------------------------------------------------
 *g:lsp_ale_auto_config_vim_lsp* (Default: |v:true|)
@@ -132,6 +133,29 @@ Severity level of reported diagnostics results. Possible values are "error",
 severity set to this variable.
 For example, when "warning" is set, "error"/"warning" results are shown
 and "information"/"hint" results are not shown.
+
+
+==============================================================================
+FUNCTIONS                                                *vim-lsp-ale-functions*
+
+------------------------------------------------------------------------------
+lsp#ale#enable()                                                *lsp#ale#enable*
+
+Enables bridge between vim-lsp and ALE. This function is automatically called
+when |lsp_setup| autocmd event is triggered by vim-lsp. So basically you don't
+need to call this function.
+
+------------------------------------------------------------------------------
+lsp#ale#disable()                                              *lsp#ale#disable*
+
+Disables bridge between vim-lsp and ALE. After this function is called,
+diagnostics results will no longer be sent to ALE until |lsp#ale#enable| is
+called again.
+
+------------------------------------------------------------------------------
+lsp#ale#enabled()                                              *lsp#ale#enabled*
+
+Returns whether bridge between vim-lsp and ALE is enabled.
 
 
 ==============================================================================
