@@ -15,7 +15,7 @@ vim-lsp-ale solves the problem.
 
 Install [vim-lsp][], [ale][ALE], [vim-lsp-ale][] with your favorite package manager or `:packadd` in your `.vimrc`.
 
-An exmaple with [vim-plug](https://github.com/junegunn/vim-plug):
+An example with [vim-plug](https://github.com/junegunn/vim-plug):
 
 ```viml
 Plug 'dense-analysis/ale'
