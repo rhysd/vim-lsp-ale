@@ -8,3 +8,11 @@ execute 'set rtp+=' . s:runtime_dir
 
 let s:helper = themis#helper('assert')
 call themis#helper('command').with(s:helper)
+
+if $THEMIS_PROFILE !=# ''
+  execute 'profile' 'start' $THEMIS_PROFILE
+  profile! file ./autoload/lsp/ale.vim
+  profile! file ./plugin/lsp_ale.vim
+endif
+
+" vim: set ft=vim:
