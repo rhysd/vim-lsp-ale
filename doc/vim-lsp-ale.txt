@@ -1,4 +1,4 @@
-*vim-lsp-ale.txt*                   Bridge between vim-slp and ale
+*vim-lsp-ale.txt*                   Bridge between vim-lsp and ALE
 
 Author: rhysd <https://rhysd.github.io>
 
