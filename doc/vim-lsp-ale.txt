@@ -129,7 +129,7 @@ ALE so that you can configure them by yourself.
 *g:lsp_ale_diagnostics_severity* (Default: "information")
 
 Severity level of reported diagnostics results. Possible values are "error",
-"warning", "information", "hint". Diagnostics results will be filstered by the
+"warning", "information", "hint". Diagnostics results will be filtered by the
 severity set to this variable.
 For example, when "warning" is set, "error"/"warning" results are shown
 and "information"/"hint" results are not shown.
