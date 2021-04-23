@@ -35,14 +35,14 @@ jobs:
           THEMIS_PROFILE: profile.txt
         run: ./vim-themis/bin/themis ./test/unit
       - uses: actions/setup-python@v2
-        if: matrix.os != "windows-latest"
+        if: matrix.os != 'windows-latest'
       - name: Report coverage
-        if: matrix.os != "windows-latest"
+        if: matrix.os != 'windows-latest'
         run: |
           pip install covimerage
           covimerage write_coverage profile.txt
           coverage report
           coverage xml
       - name: Upload coverage to codecov
-        if: matrix.os != "windows-latest"
+        if: matrix.os != 'windows-latest'
         uses: codecov/codecov-action@v1
