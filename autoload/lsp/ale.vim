@@ -70,13 +70,13 @@ function! s:notify_diag_to_ale(bufnr) abort
                 let idx += 1
             endfor
         endfor
-        call ale#other_source#ShowResults(a:bufnr, 'vim-lsp', results)
     catch
         " Since ale#other_source#StartChecking() was already called, ale#other_source#ShowResults()
         " needs to be called to notify ALE that checking was done.
         call ale#other_source#ShowResults(a:bufnr, 'vim-lsp', [])
         throw v:exception
     endtry
+    call ale#other_source#ShowResults(a:bufnr, 'vim-lsp', results)
 endfunction
 
 let s:prev_num_diags = {}
