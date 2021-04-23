@@ -243,6 +243,7 @@ Describe vim-lsp-ale
         call lsp#ui#vim#utils#mock_diagnostics_to_loc_list(s:test_locs())
         let g:lsp_ale_test_mock_diags = s:test_diags()
         let response = {
+            \   'server': 'gopls',
             \   'response': {
             \       'method': 'something/doSomethihg',
             \       'jsonrpc': '2.0',
@@ -255,16 +256,28 @@ Describe vim-lsp-ale
         Assert Equals(ale#other_source#last_start_checking(), v:null)
     End
 
-    It does nothing when method is missing in the notification
+    It does nothing when method or server is missing in the notification
         call lsp#ui#vim#utils#mock_diagnostics_to_loc_list(s:test_locs())
         let g:lsp_ale_test_mock_diags = s:test_diags()
-        let response = {
-            \   'response': {
-            \       'jsonrpc': '2.0',
-            \       'params': {},
-            \   }
-            \ }
-        call lsp#callbag#mock_receive(response)
+
+        for response in [
+                \   {
+                \       'response': {
+                \           'method': 'something/doSomethihg',
+                \           'jsonrpc': '2.0',
+                \           'params': {},
+                \       }
+                \   },
+                \   {
+                \       'server': 'gopls',
+                \       'response': {
+                \           'jsonrpc': '2.0',
+                \           'params': {},
+                \       }
+                \   }
+                \ ]
+            call lsp#callbag#mock_receive(response)
+        endfor
 
         call ale#other_source#check_show_no_result()
         Assert Equals(ale#other_source#last_start_checking(), v:null)
