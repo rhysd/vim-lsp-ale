@@ -7,7 +7,7 @@
 by vim-lsp are shown in ALE's interface.
 
 When simply using ALE and vim-lsp, both plugins run LSP servers respectively. Running multiple server processes
-consume resources and may cause some issues. Showing lint results from multiple plugins is confusing.
+consume resources and may cause some issues. And showing lint results from multiple plugins is confusing.
 vim-lsp-ale solves the problem.
 
 <img alt="screencast" src="https://github.com/rhysd/ss/blob/master/vim-lsp-ale/main.gif?raw=true" width="582" height="316"/>
@@ -32,13 +32,16 @@ for filetypes you want to check with vim-lsp.
 The following example configures `gopls` to check Go sources.
 
 ```vim
+" LSP configurations for vim-lsp
 if executable('gopls')
     autocmd User lsp_setup call lsp#register_server({
-        \ 'name': 'gopls',
-        \ 'cmd': ['gopls'],
-        \ 'allowlist': ['go', 'gomod'],
+        \   'name': 'gopls',
+        \   'cmd': ['gopls'],
+        \   'allowlist': ['go', 'gomod'],
         \ })
 endif
+
+" Set 'vim-lsp' linter
 let g:ale_linters = {
     \   'go': ['vim-lsp'],
     \ }
