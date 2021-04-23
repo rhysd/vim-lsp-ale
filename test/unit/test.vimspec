@@ -90,10 +90,13 @@ Describe vim-lsp-ale
     End
 
     It stops subscribing stream when lsp#ale#disable() is called
+        call lsp#ale#enable()
         Assert True(lsp#ale#enabled())
         call lsp#ale#disable()
         Assert False(lsp#ale#enabled())
         Assert True(lsp#callbag#disposed())
+        call lsp#ale#disable()
+        Assert False(lsp#ale#enabled())
     End
 
     It does not notify results when vim-lsp-ale is disabled
