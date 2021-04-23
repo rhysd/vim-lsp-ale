@@ -48,26 +48,33 @@ function! lsp#ale#on_ale_want_results(bufnr) abort
 endfunction
 
 function! s:notify_diag_to_ale(bufnr) abort
-    let uri = lsp#utils#get_buffer_uri(a:bufnr)
-    let diags = lsp#internal#diagnostics#state#_get_all_diagnostics_grouped_by_server_for_uri(uri)
-    let threshold = s:severity_threshold()
-    let results = []
-    for [server, diag] in items(diags)
-        " Note: Do not filter `diag` destructively since the object is also used by vim-lsp
-        let locs = lsp#ui#vim#utils#diagnostics_to_loc_list({'response': diag})
-        let idx = 0
-        for loc in locs
-            let severity = get(diag.params.diagnostics[idx], 'severity', s:ERROR)
-            if severity > threshold
-                continue
-            endif
-            let loc.text = '[' . server . '] ' . loc.text
-            let loc.type = s:get_loc_type(severity)
-            let results += [loc]
-            let idx += 1
+    try
+        let uri = lsp#utils#get_buffer_uri(a:bufnr)
+        let diags = lsp#internal#diagnostics#state#_get_all_diagnostics_grouped_by_server_for_uri(uri)
+        let threshold = s:severity_threshold()
+        let results = []
+        for [server, diag] in items(diags)
+            " Note: Do not filter `diag` destructively since the object is also used by vim-lsp
+            let locs = lsp#ui#vim#utils#diagnostics_to_loc_list({'response': diag})
+            let idx = 0
+            for loc in locs
+                let severity = get(diag.params.diagnostics[idx], 'severity', s:ERROR)
+                if severity > threshold
+                    continue
+                endif
+                let loc.text = '[' . server . '] ' . loc.text
+                let loc.type = s:get_loc_type(severity)
+                let results += [loc]
+                let idx += 1
+            endfor
         endfor
-    endfor
-    call ale#other_source#ShowResults(a:bufnr, 'vim-lsp', results)
+        call ale#other_source#ShowResults(a:bufnr, 'vim-lsp', results)
+    catch
+        " Since ale#other_source#StartChecking() was already called, ale#other_source#ShowResults()
+        " needs to be called to notify ALE that checking was done.
+        call ale#other_source#ShowResults(a:bufnr, 'vim-lsp', [])
+        throw v:exception
+    endtry
 endfunction
 
 let s:prev_num_diags = {}
