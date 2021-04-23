@@ -36,6 +36,8 @@ function! s:get_loc_type(severity) abort
 endfunction
 
 function! lsp#ale#on_ale_want_results(bufnr) abort
+    " TODO: Check LSP server is running for current buffer. _is_enabled_for_buffer returns 1 even if it is not running
+
     " Note: Checking lsp#internal#diagnostics#state#_is_enabled_for_buffer here. If previous lint
     " errors remain in a buffer, they won't be updated when vim-lsp is disabled for the buffer.
     if s:Dispose is v:null || !lsp#internal#diagnostics#state#_is_enabled_for_buffer(a:bufnr)

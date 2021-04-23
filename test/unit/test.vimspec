@@ -223,15 +223,17 @@ Describe vim-lsp-ale
             call lsp#ui#vim#utils#mock_diagnostics_to_loc_list(s:test_locs())
             let g:lsp_ale_test_mock_diags = s:test_diags()
 
-            let response = { 'response': s:test_diags().gopls, 'server': 'gopls' }
+            call lsp#callbag#mock_receive({ 'response': s:test_diags().gopls, 'server': 'gopls' })
 
-            call lsp#callbag#mock_receive(response)
-
-            " XXX: No way to catch exception thrown while sleeping. Indirectly
-            " check the error was handled correctly by checking the result is
-            " set to empty.
-            call ale#other_source#wait_until_show_results()
-            Assert Equals(ale#other_source#last_show_results(), [bufnr, 'vim-lsp', []])
+            if has('nvim')
+                Throws /^vim-lsp-ale: Unexpected severity/ ale#other_source#wait_until_show_results()
+            else
+                " XXX: No way to catch exception thrown while sleeping. Indirectly
+                " check the error was handled correctly by checking the result is
+                " set to empty.
+                call ale#other_source#wait_until_show_results()
+                Assert Equals(ale#other_source#last_show_results(), [bufnr, 'vim-lsp', []])
+            endif
         End
     End
 
