@@ -4,7 +4,7 @@ function! s:test_diags() abort
         \   'method': 'textDocument/publishDiagnostics',
         \   'jsonrpc': '2.0',
         \   'params': {
-        \       'uri': 'file:///Users/rhysd/.vim/bundle/vim-lsp-ale/foo.go',
+        \       'uri': 'file:///path/to/dummy.txt',
         \       'diagnostics': [
         \           {
         \               'source': 'compiler',
@@ -35,13 +35,13 @@ function! s:test_locs() abort
         \   {
         \       'lnum': 5,
         \       'col': 2,
-        \       'filename': '/Users/rhysd/.vim/bundle/vim-lsp-ale/foo.go',
+        \       'filename': '/path/to/dummy.txt',
         \       'text': 'compiler:Error:error message 1'
         \   },
         \   {
         \       'lnum': 5,
         \       'col': 2,
-        \       'filename': '/Users/rhysd/.vim/bundle/vim-lsp-ale/foo.go',
+        \       'filename': '/path/to/dummy.txt',
         \       'text': 'compiler:Warning:warning message 1'
         \   }
         \ ]]
@@ -60,6 +60,7 @@ Describe vim-lsp-ale
     End
 
     Before each
+        call lsp#ale#_reset_prev_num_diags()
         call lsp#callbag#reset()
         call ale#other_source#reset()
         call lsp#ui#vim#utils#reset()
@@ -310,6 +311,28 @@ Describe vim-lsp-ale
 
         Assert Equals(ale#other_source#last_start_checking(), [bufnr, 'vim-lsp'])
         Assert Equals(ale#other_source#last_show_results(), [bufnr, 'vim-lsp', []])
+    End
+
+    It skips sending results to ALE when no error continues to happen
+        let bufnr = bufnr('')
+        let diags = s:test_diags()
+        let diags.gopls.params.diagnostics = []
+
+        " First notification
+        let response = { 'response': diags.gopls, 'server': 'gopls' }
+        call lsp#callbag#mock_receive(response)
+
+        call ale#other_source#wait_until_show_results()
+        Assert Equals(ale#other_source#last_start_checking(), [bufnr, 'vim-lsp'])
+        Assert Equals(ale#other_source#last_show_results(), [bufnr, 'vim-lsp', []])
+
+        call ale#other_source#reset()
+
+        " Second notification
+        call lsp#callbag#mock_receive(response)
+
+        call ale#other_source#check_show_no_result()
+        Assert Equals(ale#other_source#last_start_checking(), v:null)
     End
 End
 

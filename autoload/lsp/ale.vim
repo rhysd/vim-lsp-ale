@@ -71,6 +71,10 @@ function! s:notify_diag_to_ale(bufnr) abort
 endfunction
 
 let s:prev_num_diags = {}
+function! lsp#ale#_reset_prev_num_diags() abort
+    let s:prev_num_diags = {}
+endfunction
+
 function! s:on_diagnostics(res) abort
     let uri = a:res.response.params.uri
     let num_diags = len(a:res.response.params.diagnostics)
