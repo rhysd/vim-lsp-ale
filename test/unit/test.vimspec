@@ -47,6 +47,42 @@ function! s:test_locs() abort
         \ ]]
 endfunction
 
+function! s:test_diags_all_severities() abort
+    let diags = s:test_diags()
+    let diag = diags.gopls.params.diagnostics[0]
+    let diags.gopls.params.diagnostics = []
+    for [sev, name] in [[1, 'error'], [2, 'warning'], [3, 'info'], [4, 'hint']]
+        let d = copy(diag)
+        let d.severity = sev
+        let d.message = name . ' message'
+        let diags.gopls.params.diagnostics += [d]
+    endfor
+    return diags
+endfunction
+
+function! s:test_locs_all_severities() abort
+    let loc = s:test_locs()[0][0]
+    let locs = []
+    for [sev, name] in [[1, 'Error'], [2, 'Warning'], [3, 'Info'], [4, 'Hint']]
+        let l = copy(loc)
+        let l.text = 'compiler:' . name . ':' . tolower(name) . ' message'
+        let locs += [l]
+    endfor
+    return [locs]
+endfunction
+
+function! s:test_expected_locs_all_severities() abort
+    let loc = s:test_locs()[0][0]
+    let locs = []
+    for [sev, name, type] in [[1, 'Error', 'E'], [2, 'Warning', 'W'], [3, 'Info', 'I'], [4, 'Hint', 'H']]
+        let l = copy(loc)
+        let l.type = type
+        let l.text = '[gopls] compiler:' . name . ':' . tolower(name) . ' message'
+        let locs += [l]
+    endfor
+    return locs
+endfunction
+
 function! s:modify_loc_item(item, type) abort
     let a:item.type = a:type
     let a:item.text = '[gopls] ' . a:item.text
@@ -188,32 +224,67 @@ Describe vim-lsp-ale
             let g:lsp_ale_diagnostics_severity = saved_diagnostics_severity
         End
 
-        It specifies threshold to filter diagnostics results by severity
-            Assert Equals(ale#other_source#last_start_checking(), v:null)
-            Assert Equals(ale#other_source#last_show_results(), v:null)
-
+        It filters results by severity 'error'
             let g:lsp_ale_diagnostics_severity = 'error'
 
-            call lsp#ui#vim#utils#mock_diagnostics_to_loc_list(s:test_locs())
-            let actual_diags = s:test_diags()
-            " Set 'warning' severity.
-            let actual_diags.gopls.params.diagnostics[1].severity = 2
-            let g:lsp_ale_test_mock_diags = actual_diags
+            call lsp#ui#vim#utils#mock_diagnostics_to_loc_list(s:test_locs_all_severities())
+            let g:lsp_ale_test_mock_diags = s:test_diags_all_severities()
 
             let bufnr = bufnr('')
             doautocmd User ALEWantResults
-
             call ale#other_source#wait_until_show_results()
 
             Assert Equals(ale#other_source#last_start_checking(), [bufnr, 'vim-lsp'])
+            let expected = s:test_expected_locs_all_severities()
+            call filter(expected, {_, l -> l.type ==# 'E'})
+            Assert Equals(ale#other_source#last_show_results(), [bufnr, 'vim-lsp', expected])
+        End
 
-            let [show_bufnr, show_name, loclist] = ale#other_source#last_show_results()
-            Assert Equals(show_bufnr, bufnr)
-            Assert Equals(show_name, 'vim-lsp')
+        It filters results by severity 'warning'
+            let g:lsp_ale_diagnostics_severity = 'warning'
 
-            " Only one error item remains
-            let expected = [s:modify_loc_item(s:test_locs()[0][0], 'E')]
-            Assert Equals(loclist, expected)
+            call lsp#ui#vim#utils#mock_diagnostics_to_loc_list(s:test_locs_all_severities())
+            let g:lsp_ale_test_mock_diags = s:test_diags_all_severities()
+
+            let bufnr = bufnr('')
+            doautocmd User ALEWantResults
+            call ale#other_source#wait_until_show_results()
+
+            Assert Equals(ale#other_source#last_start_checking(), [bufnr, 'vim-lsp'])
+            let expected = s:test_expected_locs_all_severities()
+            call filter(expected, {_, l -> l.type =~# 'E\|W'})
+            Assert Equals(ale#other_source#last_show_results(), [bufnr, 'vim-lsp', expected])
+        End
+
+        It filters results by severity 'information'
+            let g:lsp_ale_diagnostics_severity = 'information'
+
+            call lsp#ui#vim#utils#mock_diagnostics_to_loc_list(s:test_locs_all_severities())
+            let g:lsp_ale_test_mock_diags = s:test_diags_all_severities()
+
+            let bufnr = bufnr('')
+            doautocmd User ALEWantResults
+            call ale#other_source#wait_until_show_results()
+
+            Assert Equals(ale#other_source#last_start_checking(), [bufnr, 'vim-lsp'])
+            let expected = s:test_expected_locs_all_severities()
+            call filter(expected, {_, l -> l.type =~# 'E\|W\|I'})
+            Assert Equals(ale#other_source#last_show_results(), [bufnr, 'vim-lsp', expected])
+        End
+
+        It filters results by severity 'hint'
+            let g:lsp_ale_diagnostics_severity = 'hint'
+
+            call lsp#ui#vim#utils#mock_diagnostics_to_loc_list(s:test_locs_all_severities())
+            let g:lsp_ale_test_mock_diags = s:test_diags_all_severities()
+
+            let bufnr = bufnr('')
+            doautocmd User ALEWantResults
+            call ale#other_source#wait_until_show_results()
+
+            Assert Equals(ale#other_source#last_start_checking(), [bufnr, 'vim-lsp'])
+            let expected = s:test_expected_locs_all_severities()
+            Assert Equals(ale#other_source#last_show_results(), [bufnr, 'vim-lsp', expected])
         End
 
         It throws an error when invalid value is set
