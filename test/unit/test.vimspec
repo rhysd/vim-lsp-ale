@@ -151,7 +151,7 @@ Describe vim-lsp-ale
         Assert Equals(ale#other_source#last_start_checking(), v:null)
     End
 
-    It notifies empty list on no diagnostics error
+    It does not notify on no diagnostics error
         Assert Equals(ale#other_source#last_start_checking(), v:null)
         Assert Equals(ale#other_source#last_show_results(), v:null)
 
@@ -160,10 +160,10 @@ Describe vim-lsp-ale
         let bufnr = bufnr('')
         doautocmd User ALEWantResults
 
-        call ale#other_source#wait_until_show_results()
+        call ale#other_source#check_show_no_result()
 
-        Assert Equals(ale#other_source#last_start_checking(), [bufnr, 'vim-lsp'])
-        Assert Equals(ale#other_source#last_show_results(), [bufnr, 'vim-lsp', []])
+        Assert Equals(ale#other_source#last_start_checking(), v:null)
+        Assert Equals(ale#other_source#last_show_results(), v:null)
     End
 
     It notifies location list items converted from diagnostics results

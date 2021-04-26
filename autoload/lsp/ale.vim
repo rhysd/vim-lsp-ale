@@ -36,26 +36,31 @@ function! s:get_loc_type(severity) abort
 endfunction
 
 function! lsp#ale#on_ale_want_results(bufnr) abort
-    " TODO: Check LSP server is running for current buffer. _is_enabled_for_buffer returns 1 even if it is not running
-
     " Note: Checking lsp#internal#diagnostics#state#_is_enabled_for_buffer here. If previous lint
     " errors remain in a buffer, they won't be updated when vim-lsp is disabled for the buffer.
     if s:Dispose is v:null || !lsp#internal#diagnostics#state#_is_enabled_for_buffer(a:bufnr)
         return
     endif
+
+    let uri = lsp#utils#get_buffer_uri(a:bufnr)
+    let diags = lsp#internal#diagnostics#state#_get_all_diagnostics_grouped_by_server_for_uri(uri)
+    if empty(diags)
+        " Do nothign when no diagnostics results
+        return
+    endif
+    " TODO: Use s:prev_num_diags cache
+
     call ale#other_source#StartChecking(a:bufnr, 'vim-lsp')
     " Avoid the issue that sign and highlight are not set
     " https://github.com/dense-analysis/ale/issues/3690
-    call timer_start(0, {-> s:notify_diag_to_ale(a:bufnr) })
+    call timer_start(0, {-> s:notify_diag_to_ale(a:bufnr, diags) })
 endfunction
 
-function! s:notify_diag_to_ale(bufnr) abort
+function! s:notify_diag_to_ale(bufnr, diags) abort
     try
-        let uri = lsp#utils#get_buffer_uri(a:bufnr)
-        let diags = lsp#internal#diagnostics#state#_get_all_diagnostics_grouped_by_server_for_uri(uri)
         let threshold = s:severity_threshold()
         let results = []
-        for [server, diag] in items(diags)
+        for [server, diag] in items(a:diags)
             " Note: Do not filter `diag` destructively since the object is also used by vim-lsp
             let locs = lsp#ui#vim#utils#diagnostics_to_loc_list({'response': diag})
             let idx = 0
@@ -77,6 +82,12 @@ function! s:notify_diag_to_ale(bufnr) abort
         throw v:exception
     endtry
     call ale#other_source#ShowResults(a:bufnr, 'vim-lsp', results)
+endfunction
+
+function! s:notify_diag_to_ale_for_buf(bufnr) abort
+    let uri = lsp#utils#get_buffer_uri(a:bufnr)
+    let diags = lsp#internal#diagnostics#state#_get_all_diagnostics_grouped_by_server_for_uri(uri)
+    call s:notify_diag_to_ale(a:bufnr, diags)
 endfunction
 
 let s:prev_num_diags = {}
@@ -109,7 +120,7 @@ function! s:on_diagnostics(res) abort
     " subscribers handled the publishDiagnostics event.
     " lsp_setup is hooked before vim-lsp sets various internal hooks. So this
     " function is called before the response is not handled by vim-lsp yet.
-    call timer_start(0, {-> s:notify_diag_to_ale(bufnr) })
+    call timer_start(0, {-> s:notify_diag_to_ale_for_buf(bufnr) })
 
     let s:prev_num_diags[uri] = num_diags
 endfunction
