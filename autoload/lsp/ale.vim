@@ -43,9 +43,9 @@ function! lsp#ale#on_ale_want_results(bufnr) abort
     endif
 
     let uri = lsp#utils#get_buffer_uri(a:bufnr)
-    let diags = lsp#internal#diagnostics#state#_get_all_diagnostics_grouped_by_server_for_uri(uri)
-    if empty(diags)
-        " Do nothign when no diagnostics results
+    let all_diags = lsp#internal#diagnostics#state#_get_all_diagnostics_grouped_by_server_for_uri(uri)
+    if empty(all_diags)
+        " Do nothing when no diagnostics results
         return
     endif
     " TODO: Use s:prev_num_diags cache
@@ -53,7 +53,7 @@ function! lsp#ale#on_ale_want_results(bufnr) abort
     call ale#other_source#StartChecking(a:bufnr, 'vim-lsp')
     " Avoid the issue that sign and highlight are not set
     " https://github.com/dense-analysis/ale/issues/3690
-    call timer_start(0, {-> s:notify_diag_to_ale(a:bufnr, diags) })
+    call timer_start(0, {-> s:notify_diag_to_ale(a:bufnr, all_diags) })
 endfunction
 
 function! s:notify_diag_to_ale(bufnr, diags) abort
@@ -95,10 +95,9 @@ function! lsp#ale#_reset_prev_num_diags() abort
     let s:prev_num_diags = {}
 endfunction
 
-function! s:on_diagnostics(res) abort
-    let uri = a:res.response.params.uri
-    let num_diags = len(a:res.response.params.diagnostics)
-    if num_diags == 0 && has_key(s:prev_num_diags, uri) && s:prev_num_diags[uri] == 0
+function! s:can_skip_diags(uri, diags) abort
+    let num_diags = len(a:diags)
+    if num_diags == 0 && get(s:prev_num_diags, a:uri, -1) == 0
         " Some language servers send diagnostics notifications even if the
         " results are not changed from previous. It's hard to check the
         " notifications are perfectly the same as previous. Here only checks
@@ -106,12 +105,22 @@ function! s:on_diagnostics(res) abort
         " empty.
         " I believe programmers usually try to keep no lint errors in the
         " source code they are writing :)
+        return v:true
+    endif
+    let s:prev_num_diags[a:uri] = num_diags
+    return v:false
+endfunction
+
+function! s:on_diagnostics(res) abort
+    let uri = a:res.response.params.uri
+    if s:can_skip_diags(uri, a:res.response.params.diagnostics)
         return
     endif
 
     let path = lsp#utils#uri_to_path(uri)
     let bufnr = bufnr('^' . path . '$')
     if bufnr == -1
+        " This branch should be unreachable
         return
     endif
 
@@ -121,8 +130,6 @@ function! s:on_diagnostics(res) abort
     " lsp_setup is hooked before vim-lsp sets various internal hooks. So this
     " function is called before the response is not handled by vim-lsp yet.
     call timer_start(0, {-> s:notify_diag_to_ale_for_buf(bufnr) })
-
-    let s:prev_num_diags[uri] = num_diags
 endfunction
 
 function! s:is_diagnostics_response(item) abort
