@@ -95,9 +95,14 @@ function! lsp#ale#_reset_prev_num_diags() abort
     let s:prev_num_diags = {}
 endfunction
 
-function! s:can_skip_diags(uri, diags) abort
+function! s:can_skip_diags(server, uri, diags) abort
+    if !has_key(s:prev_num_diags, a:server)
+        let s:prev_num_diags[a:server] = {}
+    endif
+    let prev = s:prev_num_diags[a:server]
+
     let num_diags = len(a:diags)
-    if num_diags == 0 && get(s:prev_num_diags, a:uri, -1) == 0
+    if num_diags == 0 && get(prev, a:uri, -1) == 0
         " Some language servers send diagnostics notifications even if the
         " results are not changed from previous. It's hard to check the
         " notifications are perfectly the same as previous. Here only checks
@@ -107,13 +112,14 @@ function! s:can_skip_diags(uri, diags) abort
         " source code they are writing :)
         return v:true
     endif
-    let s:prev_num_diags[a:uri] = num_diags
+
+    let prev[a:uri] = num_diags
     return v:false
 endfunction
 
 function! s:on_diagnostics(res) abort
     let uri = a:res.response.params.uri
-    if s:can_skip_diags(uri, a:res.response.params.diagnostics)
+    if s:can_skip_diags(a:res.server, uri, a:res.response.params.diagnostics)
         return
     endif
 
