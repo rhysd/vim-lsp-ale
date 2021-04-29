@@ -35,6 +35,42 @@ function! s:get_loc_type(severity) abort
     endif
 endfunction
 
+let s:prev_num_diags = {}
+function! lsp#ale#_reset_prev_num_diags() abort
+    let s:prev_num_diags = {}
+endfunction
+
+function! s:can_skip_diags(server, uri, diags) abort
+    if !has_key(s:prev_num_diags, a:server)
+        let s:prev_num_diags[a:server] = {}
+    endif
+    let prev = s:prev_num_diags[a:server]
+
+    let num_diags = len(a:diags)
+    if num_diags == 0 && get(prev, a:uri, -1) == 0
+        " Some language servers send diagnostics notifications even if the
+        " results are not changed from previous. It's hard to check the
+        " notifications are perfectly the same as previous. Here only checks
+        " emptiness and skip if both previous ones and current ones are
+        " empty.
+        " I believe programmers usually try to keep no lint errors in the
+        " source code they are writing :)
+        return v:true
+    endif
+
+    let prev[a:uri] = num_diags
+    return v:false
+endfunction
+
+function! s:can_skip_all_diags(uri, all_diags) abort
+    for [server, diags] in items(a:all_diags)
+        if !s:can_skip_diags(server, a:uri, diags)
+            return v:false
+        endif
+    endfor
+    return v:true
+endfunction
+
 function! lsp#ale#on_ale_want_results(bufnr) abort
     " Note: Checking lsp#internal#diagnostics#state#_is_enabled_for_buffer here. If previous lint
     " errors remain in a buffer, they won't be updated when vim-lsp is disabled for the buffer.
@@ -44,11 +80,10 @@ function! lsp#ale#on_ale_want_results(bufnr) abort
 
     let uri = lsp#utils#get_buffer_uri(a:bufnr)
     let all_diags = lsp#internal#diagnostics#state#_get_all_diagnostics_grouped_by_server_for_uri(uri)
-    if empty(all_diags)
+    if empty(all_diags) || s:can_skip_all_diags(uri, all_diags)
         " Do nothing when no diagnostics results
         return
     endif
-    " TODO: Use s:prev_num_diags cache
 
     call ale#other_source#StartChecking(a:bufnr, 'vim-lsp')
     " Avoid the issue that sign and highlight are not set
@@ -88,33 +123,6 @@ function! s:notify_diag_to_ale_for_buf(bufnr) abort
     let uri = lsp#utils#get_buffer_uri(a:bufnr)
     let diags = lsp#internal#diagnostics#state#_get_all_diagnostics_grouped_by_server_for_uri(uri)
     call s:notify_diag_to_ale(a:bufnr, diags)
-endfunction
-
-let s:prev_num_diags = {}
-function! lsp#ale#_reset_prev_num_diags() abort
-    let s:prev_num_diags = {}
-endfunction
-
-function! s:can_skip_diags(server, uri, diags) abort
-    if !has_key(s:prev_num_diags, a:server)
-        let s:prev_num_diags[a:server] = {}
-    endif
-    let prev = s:prev_num_diags[a:server]
-
-    let num_diags = len(a:diags)
-    if num_diags == 0 && get(prev, a:uri, -1) == 0
-        " Some language servers send diagnostics notifications even if the
-        " results are not changed from previous. It's hard to check the
-        " notifications are perfectly the same as previous. Here only checks
-        " emptiness and skip if both previous ones and current ones are
-        " empty.
-        " I believe programmers usually try to keep no lint errors in the
-        " source code they are writing :)
-        return v:true
-    endif
-
-    let prev[a:uri] = num_diags
-    return v:false
 endfunction
 
 function! s:on_diagnostics(res) abort
