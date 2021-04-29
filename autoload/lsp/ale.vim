@@ -114,7 +114,7 @@ function! s:notify_diag_to_ale(bufnr, diags) abort
         " Since ale#other_source#StartChecking() was already called, ale#other_source#ShowResults()
         " needs to be called to notify ALE that checking was done.
         call ale#other_source#ShowResults(a:bufnr, 'vim-lsp', [])
-        throw v:exception
+        throw 'vim-lsp-ale: Error while notifying results to ALE: ' . v:exception . ' at ' . v:throwpoint
     endtry
     call ale#other_source#ShowResults(a:bufnr, 'vim-lsp', results)
 endfunction
