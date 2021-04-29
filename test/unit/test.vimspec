@@ -215,6 +215,30 @@ Describe vim-lsp-ale
         Assert Equals(len(loclist), 1, string(loclist))
     End
 
+    It skips notifying results to ALE when no error continues to happen
+        let bufnr = bufnr('')
+
+        " Prepare empty results
+        let diags = s:test_diags()
+        let diags.gopls.params.diagnostics = []
+        let g:lsp_ale_test_mock_diags = diags
+
+        " First notification
+        doautocmd User ALEWantResults
+
+        call ale#other_source#wait_until_show_results()
+        Assert Equals(ale#other_source#last_start_checking(), [bufnr, 'vim-lsp'])
+        Assert Equals(ale#other_source#last_show_results(), [bufnr, 'vim-lsp', []])
+
+        call ale#other_source#reset()
+
+        " Second notification
+        doautocmd User ALEWantResults
+
+        call ale#other_source#check_show_no_result()
+        Assert Equals(ale#other_source#last_start_checking(), v:null)
+    End
+
     Describe g:lsp_ale_diagnostics_severity
         Before
             let saved_diagnostics_severity = g:lsp_ale_diagnostics_severity

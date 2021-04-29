@@ -64,7 +64,7 @@ endfunction
 
 function! s:can_skip_all_diags(uri, all_diags) abort
     for [server, diags] in items(a:all_diags)
-        if !s:can_skip_diags(server, a:uri, diags)
+        if !s:can_skip_diags(server, a:uri, diags.params.diagnostics)
             return v:false
         endif
     endfor
