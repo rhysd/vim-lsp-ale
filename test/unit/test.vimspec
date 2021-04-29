@@ -136,107 +136,229 @@ Describe vim-lsp-ale
         Assert False(lsp#ale#enabled())
     End
 
-    It does not notify results when vim-lsp-ale is disabled
-        call lsp#ale#disable()
-        doautocmd User ALEWantResults
-        Assert Equals(ale#other_source#last_start_checking(), v:null)
+    Context ALEWantResults
+        It does not notify results when vim-lsp-ale is disabled
+            call lsp#ale#disable()
+            doautocmd User ALEWantResults
+            Assert Equals(ale#other_source#last_start_checking(), v:null)
+        End
+
+        It does not notify results when the buffer disables LSP
+            Assert Equals(ale#other_source#last_start_checking(), v:null)
+
+            let g:lsp_ale_test_mock_bufnr = -1
+            doautocmd User ALEWantResults
+
+            Assert Equals(ale#other_source#last_start_checking(), v:null)
+        End
+
+        It does not notify on no diagnostics error
+            Assert Equals(ale#other_source#last_start_checking(), v:null)
+            Assert Equals(ale#other_source#last_show_results(), v:null)
+
+            let g:lsp_ale_test_mock_diags = {}
+
+            let bufnr = bufnr('')
+            doautocmd User ALEWantResults
+
+            call ale#other_source#check_show_no_result()
+
+            Assert Equals(ale#other_source#last_start_checking(), v:null)
+            Assert Equals(ale#other_source#last_show_results(), v:null)
+        End
+
+        It notifies location list items converted from diagnostics results
+            Assert Equals(ale#other_source#last_start_checking(), v:null)
+            Assert Equals(ale#other_source#last_show_results(), v:null)
+
+            call lsp#ui#vim#utils#mock_diagnostics_to_loc_list(s:test_locs())
+            let g:lsp_ale_test_mock_diags = s:test_diags()
+
+            let bufnr = bufnr('')
+            doautocmd User ALEWantResults
+
+            call ale#other_source#wait_until_show_results()
+
+            Assert Equals(ale#other_source#last_start_checking(), [bufnr, 'vim-lsp'])
+
+            let [show_bufnr, show_name, loclist] = ale#other_source#last_show_results()
+            Assert Equals(show_bufnr, bufnr)
+            Assert Equals(show_name, 'vim-lsp')
+
+            let expected_locs = s:test_locs()[0]
+            call s:modify_loc_item(expected_locs[0], 'E')
+            call s:modify_loc_item(expected_locs[1], 'W')
+
+            Assert Equals(loclist, expected_locs)
+        End
+
+        It filters diagnostics results by severity
+            Assert Equals(ale#other_source#last_start_checking(), v:null)
+            Assert Equals(ale#other_source#last_show_results(), v:null)
+
+            call lsp#ui#vim#utils#mock_diagnostics_to_loc_list(s:test_locs())
+            let actual_diags = s:test_diags()
+            " Set 'hint' severity. Default threshold is 'info'
+            let actual_diags.gopls.params.diagnostics[1].severity = 4
+            let g:lsp_ale_test_mock_diags = actual_diags
+
+            let bufnr = bufnr('')
+            doautocmd User ALEWantResults
+
+            call ale#other_source#wait_until_show_results()
+
+            Assert Equals(ale#other_source#last_start_checking(), [bufnr, 'vim-lsp'])
+
+            let [show_bufnr, show_name, loclist] = ale#other_source#last_show_results()
+            Assert Equals(show_bufnr, bufnr)
+            Assert Equals(show_name, 'vim-lsp')
+
+            Assert Equals(len(loclist), 1, string(loclist))
+        End
+
+        It skips notifying results to ALE when no error continues to happen
+            let bufnr = bufnr('')
+
+            " Prepare empty results
+            let diags = s:test_diags()
+            let diags.gopls.params.diagnostics = []
+            let g:lsp_ale_test_mock_diags = diags
+
+            " First notification
+            doautocmd User ALEWantResults
+
+            call ale#other_source#wait_until_show_results()
+            Assert Equals(ale#other_source#last_start_checking(), [bufnr, 'vim-lsp'])
+            Assert Equals(ale#other_source#last_show_results(), [bufnr, 'vim-lsp', []])
+
+            call ale#other_source#reset()
+
+            " Second notification
+            doautocmd User ALEWantResults
+
+            call ale#other_source#check_show_no_result()
+            Assert Equals(ale#other_source#last_start_checking(), v:null)
+        End
     End
 
-    It does not notify results when the buffer disables LSP
-        Assert Equals(ale#other_source#last_start_checking(), v:null)
+    Context textDocument/publishDiagnostics notification
+        It notifies diagnostics results to ALE
+            Assert Equals(ale#other_source#last_start_checking(), v:null)
+            Assert Equals(ale#other_source#last_show_results(), v:null)
 
-        let g:lsp_ale_test_mock_bufnr = -1
-        doautocmd User ALEWantResults
+            let bufnr = bufnr('')
+            call lsp#ui#vim#utils#mock_diagnostics_to_loc_list(s:test_locs())
+            let g:lsp_ale_test_mock_diags = s:test_diags()
 
-        Assert Equals(ale#other_source#last_start_checking(), v:null)
-    End
+            let response = { 'response': s:test_diags()['gopls'], 'server': 'gopls' }
+            call lsp#callbag#mock_receive(response)
 
-    It does not notify on no diagnostics error
-        Assert Equals(ale#other_source#last_start_checking(), v:null)
-        Assert Equals(ale#other_source#last_show_results(), v:null)
+            call ale#other_source#wait_until_show_results()
 
-        let g:lsp_ale_test_mock_diags = {}
+            Assert Equals(ale#other_source#last_start_checking(), [bufnr, 'vim-lsp'])
 
-        let bufnr = bufnr('')
-        doautocmd User ALEWantResults
+            let [show_bufnr, show_name, loclist] = ale#other_source#last_show_results()
+            Assert Equals(show_bufnr, bufnr)
+            Assert Equals(show_name, 'vim-lsp')
 
-        call ale#other_source#check_show_no_result()
+            let expected_locs = s:test_locs()[0]
+            call s:modify_loc_item(expected_locs[0], 'E')
+            call s:modify_loc_item(expected_locs[1], 'W')
 
-        Assert Equals(ale#other_source#last_start_checking(), v:null)
-        Assert Equals(ale#other_source#last_show_results(), v:null)
-    End
+            Assert Equals(loclist, expected_locs)
+        End
 
-    It notifies location list items converted from diagnostics results
-        Assert Equals(ale#other_source#last_start_checking(), v:null)
-        Assert Equals(ale#other_source#last_show_results(), v:null)
+        It does nothing when receiving notification other than textDocument/publishDiagnostics
+            call lsp#ui#vim#utils#mock_diagnostics_to_loc_list(s:test_locs())
+            let g:lsp_ale_test_mock_diags = s:test_diags()
+            let response = {
+                \   'server': 'gopls',
+                \   'response': {
+                \       'method': 'something/doSomethihg',
+                \       'jsonrpc': '2.0',
+                \       'params': {},
+                \   }
+                \ }
+            call lsp#callbag#mock_receive(response)
 
-        call lsp#ui#vim#utils#mock_diagnostics_to_loc_list(s:test_locs())
-        let g:lsp_ale_test_mock_diags = s:test_diags()
+            call ale#other_source#check_show_no_result()
+            Assert Equals(ale#other_source#last_start_checking(), v:null)
+        End
 
-        let bufnr = bufnr('')
-        doautocmd User ALEWantResults
+        It does nothing when method or server is missing in the notification
+            call lsp#ui#vim#utils#mock_diagnostics_to_loc_list(s:test_locs())
+            let g:lsp_ale_test_mock_diags = s:test_diags()
 
-        call ale#other_source#wait_until_show_results()
+            for response in [
+                    \   {
+                    \       'response': {
+                    \           'method': 'something/doSomethihg',
+                    \           'jsonrpc': '2.0',
+                    \           'params': {},
+                    \       }
+                    \   },
+                    \   {
+                    \       'server': 'gopls',
+                    \       'response': {
+                    \           'jsonrpc': '2.0',
+                    \           'params': {},
+                    \       }
+                    \   }
+                    \ ]
+                call lsp#callbag#mock_receive(response)
+            endfor
 
-        Assert Equals(ale#other_source#last_start_checking(), [bufnr, 'vim-lsp'])
+            call ale#other_source#check_show_no_result()
+            Assert Equals(ale#other_source#last_start_checking(), v:null)
+        End
 
-        let [show_bufnr, show_name, loclist] = ale#other_source#last_show_results()
-        Assert Equals(show_bufnr, bufnr)
-        Assert Equals(show_name, 'vim-lsp')
+        It does nothing when received notification is for buffer which doesn't exist
+            let bufnr = bufnr('')
+            call lsp#ui#vim#utils#mock_diagnostics_to_loc_list(s:test_locs())
+            let g:lsp_ale_test_mock_diags = s:test_diags()
+            call lsp#utils#mock_buf_name('/path/to/somewhere/else.txt')
 
-        let expected_locs = s:test_locs()[0]
-        call s:modify_loc_item(expected_locs[0], 'E')
-        call s:modify_loc_item(expected_locs[1], 'W')
+            let response = { 'response': s:test_diags()['gopls'], 'server': 'gopls' }
+            call lsp#callbag#mock_receive(response)
 
-        Assert Equals(loclist, expected_locs)
-    End
+            call ale#other_source#check_show_no_result()
+            Assert Equals(ale#other_source#last_start_checking(), v:null)
+        End
 
-    It filters diagnostics results by severity
-        Assert Equals(ale#other_source#last_start_checking(), v:null)
-        Assert Equals(ale#other_source#last_show_results(), v:null)
+        It notifies empty list when notification says no lint error was found
+            let bufnr = bufnr('')
+            let response = { 'response': s:test_diags()['gopls'], 'server': 'gopls' }
+            let response.response.params.diagnostics = []
 
-        call lsp#ui#vim#utils#mock_diagnostics_to_loc_list(s:test_locs())
-        let actual_diags = s:test_diags()
-        " Set 'hint' severity. Default threshold is 'info'
-        let actual_diags.gopls.params.diagnostics[1].severity = 4
-        let g:lsp_ale_test_mock_diags = actual_diags
+            call lsp#callbag#mock_receive(response)
 
-        let bufnr = bufnr('')
-        doautocmd User ALEWantResults
+            call ale#other_source#wait_until_show_results()
 
-        call ale#other_source#wait_until_show_results()
+            Assert Equals(ale#other_source#last_start_checking(), [bufnr, 'vim-lsp'])
+            Assert Equals(ale#other_source#last_show_results(), [bufnr, 'vim-lsp', []])
+        End
 
-        Assert Equals(ale#other_source#last_start_checking(), [bufnr, 'vim-lsp'])
+        It skips sending results to ALE when no error continues to happen
+            let bufnr = bufnr('')
+            let diags = s:test_diags()
+            let diags.gopls.params.diagnostics = []
 
-        let [show_bufnr, show_name, loclist] = ale#other_source#last_show_results()
-        Assert Equals(show_bufnr, bufnr)
-        Assert Equals(show_name, 'vim-lsp')
+            " First notification
+            let response = { 'response': diags.gopls, 'server': 'gopls' }
+            call lsp#callbag#mock_receive(response)
 
-        Assert Equals(len(loclist), 1, string(loclist))
-    End
+            call ale#other_source#wait_until_show_results()
+            Assert Equals(ale#other_source#last_start_checking(), [bufnr, 'vim-lsp'])
+            Assert Equals(ale#other_source#last_show_results(), [bufnr, 'vim-lsp', []])
 
-    It skips notifying results to ALE when no error continues to happen
-        let bufnr = bufnr('')
+            call ale#other_source#reset()
 
-        " Prepare empty results
-        let diags = s:test_diags()
-        let diags.gopls.params.diagnostics = []
-        let g:lsp_ale_test_mock_diags = diags
+            " Second notification
+            call lsp#callbag#mock_receive(response)
 
-        " First notification
-        doautocmd User ALEWantResults
-
-        call ale#other_source#wait_until_show_results()
-        Assert Equals(ale#other_source#last_start_checking(), [bufnr, 'vim-lsp'])
-        Assert Equals(ale#other_source#last_show_results(), [bufnr, 'vim-lsp', []])
-
-        call ale#other_source#reset()
-
-        " Second notification
-        doautocmd User ALEWantResults
-
-        call ale#other_source#check_show_no_result()
-        Assert Equals(ale#other_source#last_start_checking(), v:null)
+            call ale#other_source#check_show_no_result()
+            Assert Equals(ale#other_source#last_start_checking(), v:null)
+        End
     End
 
     Describe g:lsp_ale_diagnostics_severity
@@ -332,123 +454,6 @@ Describe vim-lsp-ale
         End
     End
 
-    It notifies diagnostics results when receiving new textDocument/publishDiagnostics notification
-        Assert Equals(ale#other_source#last_start_checking(), v:null)
-        Assert Equals(ale#other_source#last_show_results(), v:null)
-
-        let bufnr = bufnr('')
-        call lsp#ui#vim#utils#mock_diagnostics_to_loc_list(s:test_locs())
-        let g:lsp_ale_test_mock_diags = s:test_diags()
-
-        let response = { 'response': s:test_diags()['gopls'], 'server': 'gopls' }
-        call lsp#callbag#mock_receive(response)
-
-        call ale#other_source#wait_until_show_results()
-
-        Assert Equals(ale#other_source#last_start_checking(), [bufnr, 'vim-lsp'])
-
-        let [show_bufnr, show_name, loclist] = ale#other_source#last_show_results()
-        Assert Equals(show_bufnr, bufnr)
-        Assert Equals(show_name, 'vim-lsp')
-
-        let expected_locs = s:test_locs()[0]
-        call s:modify_loc_item(expected_locs[0], 'E')
-        call s:modify_loc_item(expected_locs[1], 'W')
-
-        Assert Equals(loclist, expected_locs)
-    End
-
-    It does nothing when receiving notification other than textDocument/publishDiagnostics
-        call lsp#ui#vim#utils#mock_diagnostics_to_loc_list(s:test_locs())
-        let g:lsp_ale_test_mock_diags = s:test_diags()
-        let response = {
-            \   'server': 'gopls',
-            \   'response': {
-            \       'method': 'something/doSomethihg',
-            \       'jsonrpc': '2.0',
-            \       'params': {},
-            \   }
-            \ }
-        call lsp#callbag#mock_receive(response)
-
-        call ale#other_source#check_show_no_result()
-        Assert Equals(ale#other_source#last_start_checking(), v:null)
-    End
-
-    It does nothing when method or server is missing in the notification
-        call lsp#ui#vim#utils#mock_diagnostics_to_loc_list(s:test_locs())
-        let g:lsp_ale_test_mock_diags = s:test_diags()
-
-        for response in [
-                \   {
-                \       'response': {
-                \           'method': 'something/doSomethihg',
-                \           'jsonrpc': '2.0',
-                \           'params': {},
-                \       }
-                \   },
-                \   {
-                \       'server': 'gopls',
-                \       'response': {
-                \           'jsonrpc': '2.0',
-                \           'params': {},
-                \       }
-                \   }
-                \ ]
-            call lsp#callbag#mock_receive(response)
-        endfor
-
-        call ale#other_source#check_show_no_result()
-        Assert Equals(ale#other_source#last_start_checking(), v:null)
-    End
-
-    It does nothing when received notification is for buffer which doesn't exist
-        let bufnr = bufnr('')
-        call lsp#ui#vim#utils#mock_diagnostics_to_loc_list(s:test_locs())
-        let g:lsp_ale_test_mock_diags = s:test_diags()
-        call lsp#utils#mock_buf_name('/path/to/somewhere/else.txt')
-
-        let response = { 'response': s:test_diags()['gopls'], 'server': 'gopls' }
-        call lsp#callbag#mock_receive(response)
-
-        call ale#other_source#check_show_no_result()
-        Assert Equals(ale#other_source#last_start_checking(), v:null)
-    End
-
-    It notifies empty list when notification says no lint error was found
-        let bufnr = bufnr('')
-        let response = { 'response': s:test_diags()['gopls'], 'server': 'gopls' }
-        let response.response.params.diagnostics = []
-
-        call lsp#callbag#mock_receive(response)
-
-        call ale#other_source#wait_until_show_results()
-
-        Assert Equals(ale#other_source#last_start_checking(), [bufnr, 'vim-lsp'])
-        Assert Equals(ale#other_source#last_show_results(), [bufnr, 'vim-lsp', []])
-    End
-
-    It skips sending results to ALE when no error continues to happen
-        let bufnr = bufnr('')
-        let diags = s:test_diags()
-        let diags.gopls.params.diagnostics = []
-
-        " First notification
-        let response = { 'response': diags.gopls, 'server': 'gopls' }
-        call lsp#callbag#mock_receive(response)
-
-        call ale#other_source#wait_until_show_results()
-        Assert Equals(ale#other_source#last_start_checking(), [bufnr, 'vim-lsp'])
-        Assert Equals(ale#other_source#last_show_results(), [bufnr, 'vim-lsp', []])
-
-        call ale#other_source#reset()
-
-        " Second notification
-        call lsp#callbag#mock_receive(response)
-
-        call ale#other_source#check_show_no_result()
-        Assert Equals(ale#other_source#last_start_checking(), v:null)
-    End
 End
 
 " vim: set ft=vim:
