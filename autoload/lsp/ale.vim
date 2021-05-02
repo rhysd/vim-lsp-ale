@@ -139,7 +139,9 @@ function! s:on_diagnostics(res) abort
     let path = lsp#utils#uri_to_path(uri)
     let bufnr = bufnr('^' . path . '$')
     if bufnr == -1
-        " This branch should be unreachable
+        " This branch is reachable when vim-lsp receives some notifications
+        " but the buffer for them was already deleted. This can happen since
+        " notifications are asynchronous
         return
     endif
 
