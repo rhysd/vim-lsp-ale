@@ -59,9 +59,9 @@ Register LSP servers you want to use with |lsp#register_server()| and set
 "vim-lsp" linter to |g:ale_linters| for filetypes you want to check with
 vim-lsp.
 
-The following example configures gopls to check Go sources. ALE will
-automatically reports diagnostics results from gopls when you're writing Go
-code.
+The following example configures gopls and golint to check Go sources. ALE
+will automatically reports diagnostics results from gopls and lint errrors
+from golint when you're writing Go source code.
 >
   if executable('gopls')
       autocmd User lsp_setup call lsp#register_server({
@@ -71,7 +71,7 @@ code.
           \ })
   endif
   let g:ale_linters = {
-      \   'go': ['vim-lsp'],
+      \   'go': ['vim-lsp', 'golint'],
       \ }
 <
 gopls: https://github.com/golang/tools/tree/master/gopls

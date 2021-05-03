@@ -43,7 +43,7 @@ endif
 
 " Set 'vim-lsp' linter
 let g:ale_linters = {
-    \   'go': ['vim-lsp'],
+    \   'go': ['vim-lsp', 'golint'],
     \ }
 ```
 
@@ -51,6 +51,9 @@ This plugin configures vim-lsp and ALE automatically. You don't need to setup va
 
 When opening a source code including some lint errors, vim-lsp will receive the errors from language server
 and ALE will report the errors in the buffer.
+
+ALE supports also many external programs. All errors can be seen in one place. The above example enables
+vim-lsp and golint.
 
 For more details, see [the documentation](./doc/vim-lsp-ale.txt).
 
