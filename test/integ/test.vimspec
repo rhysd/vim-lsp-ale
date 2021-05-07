@@ -29,7 +29,7 @@ Describe rust-analyzer
         bwipeout!
     End
 
-    It shows an diagnostic with ALE
+    It shows diagnostics results with ALE through vim-lsp
         Assert lsp#ale#enabled()
 
         let bufnr = bufnr('')
