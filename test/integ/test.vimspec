@@ -1,0 +1,67 @@
+let s:SEP = has('win32') ? '\' : '/'
+
+Describe rust-analyzer
+    Before all
+        if !executable('rust-analyzer')
+            throw 'rust-analyzer command is not found. It must be installed for running integration tests'
+        endif
+    End
+
+    After all
+        redir! > integ_messages.txt
+            if exists(':LspStatus')
+                LspStatus
+            else
+                echom 'No :LspStatus command is defined'
+            endif
+            message
+        redir END
+    End
+
+    Before each
+        let dir = IntegTestRootDir()
+        execute 'cd' dir
+        let file = join([dir, 'project', 'src', 'lib.rs'], s:SEP)
+        execute 'edit!' file
+    End
+
+    After each
+        bwipeout!
+    End
+
+    It shows diagnostics results with ALE through vim-lsp
+        Assert lsp#ale#enabled()
+
+        let bufnr = bufnr('')
+
+        let elapsed = 0 " in seconds
+        let timeout = 120 " in seconds
+        let counts = ale#statusline#Count(bufnr)
+        while elapsed <= timeout
+            if counts.total > 0
+                break
+            endif
+            sleep 1
+            let elapsed += 1
+            let counts = ale#statusline#Count(bufnr)
+        endwhile
+
+        let uri = lsp#utils#get_buffer_uri(bufnr)
+        let all_diags = lsp#internal#diagnostics#state#_get_all_diagnostics_grouped_by_server_for_uri(uri)
+        let info =  "\nall diags: " . string(all_diags)
+                    \ . "\nlocation list: " . string(ale#engine#GetLoclist(bufnr))
+                    \ . "\nserver_status: " . lsp#get_server_status()
+
+        Assert True(counts.total > 0, 'No error found after ' . elapsed . ' seconds' . info)
+
+        let loclist = ale#engine#GetLoclist(bufnr)
+        Assert NotEmpty(loclist, 'Location list from ALE is empty after ' . elapsed . ' seconds. ' . info)
+
+        let item = loclist[0]
+        let item_str = string(item)
+        Assert Equals(item.linter_name, 'vim-lsp', item_str . info)
+        Assert True(item.from_other_source, item_str . info)
+        Assert Match(item.filename, 'lib\.rs$', item_str . info)
+        Assert Match(item.text, 'this_variable_is_unused', item_str . info)
+    End
+End

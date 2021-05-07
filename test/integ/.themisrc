@@ -1,0 +1,44 @@
+call themis#option('exclude', 'test/README.md')
+
+let s:dir = expand('<sfile>:p:h')
+let s:sep = has('win32') ? '\' : '/'
+let s:vim_lsp_dir = join([s:dir, 'deps', 'vim-lsp'], s:sep)
+let s:ale_dir = join([s:dir, 'deps', 'ale'], s:sep)
+
+if !isdirectory(s:vim_lsp_dir)
+    throw 'vim-lsp is not cloned at ' . s:vim_lsp_dir
+endif
+
+if !isdirectory(s:ale_dir)
+    throw 'ALE is not cloned at ' . s:ale_dir
+endif
+
+function! IntegTestRootDir() abort
+    return s:dir
+endfunction
+
+execute 'set rtp+=' . s:vim_lsp_dir
+execute 'set rtp+=' . s:ale_dir
+filetype plugin indent on
+
+let g:lsp_log_file = 'lsp-log.txt'
+autocmd User lsp_setup call lsp#register_server({
+        \ 'name': 'rust-analyzer',
+        \ 'cmd': { server_info -> ['rust-analyzer'] },
+        \ 'allowlist': ['rust'],
+        \ })
+
+let g:ale_linters = { 'rust': ['vim-lsp'] }
+
+runtime plugin/lsp_ale.vim
+runtime plugin/lsp.vim
+runtime plugin/ale.vim
+
+" This is called automatically at VimEnter, but our tests load vim-lsp
+" after the event. So manually call it here
+call lsp#enable()
+
+let s:helper = themis#helper('assert')
+call themis#helper('command').with(s:helper)
+
+" vim: set ft=vim:
