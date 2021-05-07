@@ -1,9 +1,7 @@
+let s:SEP = has('win32') ? '\' : '/'
+
 Describe rust-analyzer
     Before all
-        if has('win32')
-            throw 'Currently integration tests assume *nix system'
-        endif
-
         if !executable('rust-analyzer')
             throw 'rust-analyzer command is not found. It must be installed for running integration tests'
         endif
@@ -23,7 +21,7 @@ Describe rust-analyzer
     Before each
         let dir = IntegTestRootDir()
         execute 'cd' dir
-        let file = dir . '/project/src/lib.rs'
+        let file = join([dir, 'project', 'src', 'lib.rs'], s:SEP)
         execute 'edit!' file
     End
 
@@ -37,7 +35,7 @@ Describe rust-analyzer
         let bufnr = bufnr('')
 
         let elapsed = 0 " in seconds
-        let timeout = 10 " in seconds
+        let timeout = 120 " in seconds
         let counts = ale#statusline#Count(bufnr)
         while elapsed <= timeout
             if counts.total > 0
