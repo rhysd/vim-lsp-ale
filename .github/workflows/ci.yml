@@ -74,8 +74,10 @@ jobs:
           path: test/integ/deps/ale
       - name: Install rust-analyzer
         run: |
-          curl -L https://github.com/rust-analyzer/rust-analyzer/releases/latest/download/rust-analyzer-linux -o /bin/rust-analyzer
-          chmod +x /bin/rust-analyzer
+          mkdir ~/bin
+          curl -L https://github.com/rust-analyzer/rust-analyzer/releases/latest/download/rust-analyzer-linux -o ~/bin/rust-analyzer
+          chmod +x ~/bin/rust-analyzer
+          echo "$HOME/bin" >> $GITHUB_PATH
       - name: Run integration tests
         env:
           THEMIS_VIM: ${{ steps.vim.outputs.executable }}
