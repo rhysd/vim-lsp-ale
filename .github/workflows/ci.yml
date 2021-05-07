@@ -52,6 +52,10 @@ jobs:
 
   integ-test:
     name: Integration tests
+    strategy:
+      matrix:
+        neovim: [true, false]
+      fail-fast: false
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -62,6 +66,8 @@ jobs:
           path: vim-themis
       - uses: rhysd/action-setup-vim@v1
         id: vim
+        with:
+          neovim: ${{ matrix.neovim }}
       - name: Checkout vim-lsp
         uses: actions/checkout@v2
         with:
