@@ -57,6 +57,11 @@ vim-lsp and golint.
 
 For more details, see [the documentation](./doc/vim-lsp-ale.txt).
 
+## Testing
+
+There are unit tests and integration tests. CI runs on GitHub Actions.
+See [test/README.md](./test/README.md) for more details.
+
 ## License
 
 Licensed under [the MIT license](./LICENSE).

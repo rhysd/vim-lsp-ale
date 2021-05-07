@@ -92,3 +92,12 @@ When some integration tests fail, the following log files would be useful to inv
 
 - `test/integ/integ_messages.txt`: Messages in `:message` area while running the tests
 - `test/integ/lsp-log.txt`: Log information of vim-lsp. It records communications between vim-lsp and a language server
+
+## CI
+
+Tests are run continuously on GitHub Actions.
+
+https://github.com/rhysd/vim-lsp-ale/actions?query=workflow%3ACI
+
+- Unit tests are run on Linux, macOS and Windows with Vim and Neovim
+- Integration tests are run on Linux with Vim and Neovim
