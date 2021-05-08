@@ -65,3 +65,5 @@ Describe rust-analyzer
         Assert Match(item.text, 'this_variable_is_unused', item_str . info)
     End
 End
+
+" vim: set ft=vim:
