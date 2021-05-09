@@ -1,13 +1,33 @@
 let s:SEP = has('win32') ? '\' : '/'
 
+function! s:get_debug_info(bufnr) abort
+    let uri = lsp#utils#get_buffer_uri(a:bufnr)
+    let all_diags = lsp#internal#diagnostics#state#_get_all_diagnostics_grouped_by_server_for_uri(uri)
+    return "\nall diags: " . string(all_diags)
+       \ . "\nlocation list: " . string(ale#engine#GetLoclist(a:bufnr))
+       \ . "\nserver_status: " . lsp#get_server_status()
+       \ . "\ncurrent lines: " . string(getline(1, '$'))
+endfunction
+
 Describe rust-analyzer
     Before all
         if !executable('rust-analyzer')
             throw 'rust-analyzer command is not found. It must be installed for running integration tests'
         endif
+
+        let dir = IntegTestRootDir()
+        execute 'cd' dir
+        let file = join([dir, 'project', 'src', 'lib.rs'], s:SEP)
+
+        " Note: It might be better to write lib.rs here and delete in `After all` hook rather than
+        " modifying a file committed to repository directly.
+        let lib_rs_contents = readfile(file)
     End
 
     After all
+        " Restore contents of lib.rs since it was modified by test case
+        call writefile(lib_rs_contents, file)
+
         redir! > integ_messages.txt
             if exists(':LspStatus')
                 LspStatus
@@ -19,9 +39,6 @@ Describe rust-analyzer
     End
 
     Before each
-        let dir = IntegTestRootDir()
-        execute 'cd' dir
-        let file = join([dir, 'project', 'src', 'lib.rs'], s:SEP)
         execute 'edit!' file
     End
 
@@ -46,12 +63,7 @@ Describe rust-analyzer
             let counts = ale#statusline#Count(bufnr)
         endwhile
 
-        let uri = lsp#utils#get_buffer_uri(bufnr)
-        let all_diags = lsp#internal#diagnostics#state#_get_all_diagnostics_grouped_by_server_for_uri(uri)
-        let info =  "\nall diags: " . string(all_diags)
-                    \ . "\nlocation list: " . string(ale#engine#GetLoclist(bufnr))
-                    \ . "\nserver_status: " . lsp#get_server_status()
-
+        let info = s:get_debug_info(bufnr)
         Assert True(counts.total > 0, 'No error found after ' . elapsed . ' seconds' . info)
 
         let loclist = ale#engine#GetLoclist(bufnr)
@@ -63,6 +75,28 @@ Describe rust-analyzer
         Assert True(item.from_other_source, item_str . info)
         Assert Match(item.filename, 'lib\.rs$', item_str . info)
         Assert Match(item.text, 'this_variable_is_unused', item_str . info)
+
+        " Fix the problem
+        normal! ggjdd
+        write
+
+        let elapsed = 0 " in seconds
+        let counts = ale#statusline#Count(bufnr)
+        while elapsed <= timeout
+            if counts.total == 0
+                break
+            endif
+            sleep 1
+            let elapsed += 1
+            let counts = ale#statusline#Count(bufnr)
+        endwhile
+
+        let info = s:get_debug_info(bufnr)
+        Assert True(counts.total == 0, 'Error found after ' . elapsed . ' seconds' . info)
+
+        " Check the error was removed from location list since it'd been fixed
+        let loclist = ale#engine#GetLoclist(bufnr)
+        Assert Empty(loclist, 'Location list from ALE is not empty after ' . elapsed . ' seconds. ' . info)
     End
 End
 
