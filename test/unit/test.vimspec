@@ -111,6 +111,18 @@ Describe vim-lsp-ale
         call lsp#ale#disable()
     End
 
+    It enables vim-lsp's diagnostics and disables to output diagnostics
+        Assert True(g:lsp_diagnostics_enabled)
+        Assert False(g:lsp_diagnostics_highlights_enabled)
+        Assert False(g:lsp_diagnostics_signs_enabled)
+        Assert False(g:lsp_diagnostics_echo_cursor)
+        Assert False(g:lsp_diagnostics_virtual_text_enabled)
+    End
+
+    It disables ALE's LSP support
+        Assert True(g:ale_disable_lsp)
+    End
+
     It defines plugin-lsp-ale autocmd group
         Assert True(exists('g:loaded_lsp_ale'))
 
