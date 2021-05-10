@@ -120,7 +120,7 @@ for configuring ALE not to start LSP server process.
 
 At the time of writing, setting |v:true| is the same as:
 >
-  let g:ale_disable_lsp = 0
+  let g:ale_disable_lsp = 1
 <
 When |v:false| is set, vim-lsp-ale does not set any variables to configure
 ALE so that you can configure them by yourself.
