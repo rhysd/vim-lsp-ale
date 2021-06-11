@@ -4,6 +4,7 @@ endif
 let g:loaded_lsp_ale = 1
 
 let g:lsp_ale_diagnostics_severity = get(g:, 'lsp_ale_diagnostics_severity', 'information')
+let g:lsp_ale_auto_enable_linter = get(g:, 'lsp_ale_auto_enable_linter', v:true)
 
 if get(g:, 'lsp_ale_auto_config_vim_lsp', v:true)
     " Enable diagnostics and disable all functionalities to show error

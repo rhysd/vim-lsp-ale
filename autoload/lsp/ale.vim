@@ -71,6 +71,14 @@ function! s:can_skip_all_diags(uri, all_diags) abort
     return v:true
 endfunction
 
+function! s:is_active_linter() abort
+    if g:lsp_ale_auto_enable_linter
+        return v:true
+    endif
+    let active_linters = get(g:ale_linters, &filetype, [])
+    return index(active_linters, 'vim-lsp') >= 0
+endf
+
 function! lsp#ale#on_ale_want_results(bufnr) abort
     " Note: Checking lsp#internal#diagnostics#state#_is_enabled_for_buffer here. If previous lint
     " errors remain in a buffer, they won't be updated when vim-lsp is disabled for the buffer.
@@ -85,10 +93,12 @@ function! lsp#ale#on_ale_want_results(bufnr) abort
         return
     endif
 
-    call ale#other_source#StartChecking(a:bufnr, 'vim-lsp')
-    " Avoid the issue that sign and highlight are not set
-    " https://github.com/dense-analysis/ale/issues/3690
-    call timer_start(0, {-> s:notify_diag_to_ale(a:bufnr, all_diags) })
+    if s:is_active_linter()
+        call ale#other_source#StartChecking(a:bufnr, 'vim-lsp')
+        " Avoid the issue that sign and highlight are not set
+        " https://github.com/dense-analysis/ale/issues/3690
+        call timer_start(0, {-> s:notify_diag_to_ale(a:bufnr, all_diags) })
+    endif
 endfunction
 
 function! s:notify_diag_to_ale(bufnr, diags) abort
@@ -125,6 +135,10 @@ function! s:notify_diag_to_ale(bufnr, diags) abort
 endfunction
 
 function! s:notify_diag_to_ale_for_buf(bufnr) abort
+    if !s:is_active_linter()
+        return
+    endif
+
     let uri = lsp#utils#get_buffer_uri(a:bufnr)
     let diags = lsp#internal#diagnostics#state#_get_all_diagnostics_grouped_by_server_for_uri(uri)
     call s:notify_diag_to_ale(a:bufnr, diags)
