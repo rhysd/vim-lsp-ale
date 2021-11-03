@@ -43,7 +43,7 @@ endif
 
 " Set 'vim-lsp' linter
 let g:ale_linters = {
-    \   'go': ['vim-lsp', 'golint'],
+    \   'go': ['golint'], " vim-lsp is implicitly active
     \ }
 ```
 

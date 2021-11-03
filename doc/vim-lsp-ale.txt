@@ -97,7 +97,7 @@ Behavior of vim-lsp-ale can be customized with some global variables.
 ------------------------------------------------------------------------------
 *g:lsp_ale_auto_config_vim_lsp* (Default: |v:true|)
 
-When |v:true| is set to true, vim-lsp-ale automatically sets several variables
+When |v:true| is set, vim-lsp-ale automatically sets several variables
 for configuring vim-lsp not to show diagnostics results in vim-lsp side.
 
 At the time of writing, setting |v:true| is the same as:
@@ -115,7 +115,7 @@ vim-lsp so that you can configure them by yourself.
 ------------------------------------------------------------------------------
 *g:lsp_ale_auto_config_ale* (Default: |v:true|)
 
-When |v:true| is set to true, vim-lsp-ale automatically sets several variables
+When |v:true| is set, vim-lsp-ale automatically sets several variables
 for configuring ALE not to start LSP server process.
 
 At the time of writing, setting |v:true| is the same as:
@@ -125,6 +125,21 @@ At the time of writing, setting |v:true| is the same as:
 When |v:false| is set, vim-lsp-ale does not set any variables to configure
 ALE so that you can configure them by yourself.
 
+------------------------------------------------------------------------------
+*g:lsp_ale_auto_enable_linter* (Default: |v:true|)
+
+When |v:true| is set, vim-lsp-ale automatically enables itself as a linter for
+all filetypes. It does not modify |g:ale_linters|.
+
+When |v:false| is set, vim-lsp-ale is only active when configured as a linter
+for a filetype:
+>
+  let g:ale_linters = {
+      \   'go':     ['vim-lsp'],
+      \   'lua':    ['vim-lsp'],
+      \   'python': ['vim-lsp'],
+      \ }
+<
 ------------------------------------------------------------------------------
 *g:lsp_ale_diagnostics_severity* (Default: "information")
 
