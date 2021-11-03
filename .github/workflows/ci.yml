@@ -83,8 +83,10 @@ jobs:
       - name: Install rust-analyzer
         run: |
           mkdir ~/bin
-          curl -L https://github.com/rust-analyzer/rust-analyzer/releases/latest/download/rust-analyzer-linux -o ~/bin/rust-analyzer
-          chmod +x ~/bin/rust-analyzer
+          curl --fail -L https://github.com/rust-analyzer/rust-analyzer/releases/latest/download/rust-analyzer-x86_64-unknown-linux-gnu.gz -o rust-analyzer.gz
+          gunzip ./rust-analyzer.gz
+          chmod +x ./rust-analyzer
+          mv ./rust-analyzer ~/bin
           echo "$HOME/bin" >> $GITHUB_PATH
       - name: Run integration tests
         env:
