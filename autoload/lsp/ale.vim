@@ -75,7 +75,7 @@ function! s:is_active_linter() abort
     if g:lsp_ale_auto_enable_linter
         return v:true
     endif
-    let active_linters = get(g:ale_linters, &filetype, [])
+    let active_linters = get(b:, ale_linters, get(g:ale_linters, &filetype, []))
     return index(active_linters, 'vim-lsp') >= 0
 endf
 
