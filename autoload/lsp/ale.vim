@@ -106,8 +106,10 @@ function! s:notify_diag_to_ale(bufnr, diags) abort
         let threshold = s:severity_threshold()
         let results = []
         for [server, diag] in items(a:diags)
+            let locs = ale#lsp#response#ReadDiagnostics(diag)
+
             " Note: Do not filter `diag` destructively since the object is also used by vim-lsp
-            let locs = lsp#ui#vim#utils#diagnostics_to_loc_list({'response': diag})
+            " let locs = lsp#ui#vim#utils#diagnostics_to_loc_list({'response': diag})
             let idx = 0
             for loc in locs
                 let severity = get(diag.params.diagnostics[idx], 'severity', s:ERROR)
