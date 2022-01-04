@@ -116,7 +116,11 @@ function! s:notify_diag_to_ale(bufnr, diags) abort
                 if severity > threshold
                     continue
                 endif
-                let loc.text = '[' . server . '] ' . loc.text
+                let diag_source = get(diag.params.diagnostics[idx], 'source', '')
+                if diag_source != ''
+                    let diag_source = '/' . source
+                endif
+                let loc.text = '[' . server . diag_source . '] ' . loc.text
                 let loc.type = s:get_loc_type(severity)
                 let results += [loc]
                 let idx += 1
