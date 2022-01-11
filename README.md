@@ -3,6 +3,9 @@
 [![Build Status][ci-badge]][ci]
 [![Coverage Status][codecov-badge]][codecov]
 
+Forked from [https://github.com/rhysd/vim-lsp-ale](rhysd/vim-lsp-ale) with minor tweaks to use
+ALE's lsp response processing which results in better highlighting of errors, hover-text etc.
+
 [vim-lsp-ale][] is a Vim plugin for bridge between [vim-lsp][] and [ALE][]. Diagnostics results received
 by vim-lsp are shown in ALE's interface.
 
